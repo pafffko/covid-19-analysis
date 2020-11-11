@@ -8,16 +8,24 @@ output:
     toc_float: yes
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, echo=TRUE}
 knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+library(readxl)
+library(knitr)
+
 ```
 
 # TEST
 xyza test
 
-```{r libraries, echo=FALSE}
-library(dplyr)
-library(ggplot2)
+```{r load_datas, cache=TRUE}
+cov_cs_df <- read_excel("data\\wuhan_blood_sample_data_Jan_Feb_2020.xlsx")
+```
+
+```{r show_head, warning=FALSE}
+kable(head(cov_cs_df, 5))
 ```
 
 
