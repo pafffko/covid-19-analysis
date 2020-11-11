@@ -8,14 +8,26 @@ output:
     toc_float: yes
 ---
 
-```{r setup, include=FALSE, echo=TRUE}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(dplyr)
-library(ggplot2)
-library(readxl)
-library(knitr)
+dplyr <- library(dplyr)
+ggplot2 <- library(ggplot2)
+readxl <- library(readxl)
+knitr <- library(knitr)
 
 ```
+
+
+
+# Used libraries
+This report is using following libraries:
+<ul>
+  <li>`r dplyr[1]`</li>
+  <li>`r ggplot2[1]`</li>
+  <li>`r readxl[1]`</li>
+  <li>`r knitr[1]`</li>
+</ul>
+
 
 # TEST
 xyza test
