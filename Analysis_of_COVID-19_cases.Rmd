@@ -4,6 +4,7 @@ author: "Paweł Kaciczak"
 date: "11 11 2020"
 output:
   html_document:
+    code_folding: hide
     toc: yes
     toc_float: yes
 ---
@@ -14,32 +15,286 @@ dplyr <- library(dplyr)
 ggplot2 <- library(ggplot2)
 readxl <- library(readxl)
 knitr <- library(knitr)
+tidyr <- library(tidyr)
+lubridate <- library(lubridate)
+plotly <- library(plotly)
+gtsummary <- library(gtsummary)
 
 ```
 
+# Introduction
 
 
-# Used libraries
+## Used libraries
 This report is using following libraries:
 <ul>
   <li>`r dplyr[1]`</li>
   <li>`r ggplot2[1]`</li>
   <li>`r readxl[1]`</li>
   <li>`r knitr[1]`</li>
+  <li>`r tidyr[1]`</li>
+  <li>`r lubridate[1]`</li>
+  <li>`r plotly[1]`</li>
+  <li>`r gtsummary[1]`</li>
 </ul>
 
 
-# TEST
-xyza test
+# Analysis
+## Introductory part
+### Loading data
+At the beginning, we need to read data from flat file.
 
 ```{r load_datas, cache=TRUE}
 cov_cs_df <- read_excel("data\\wuhan_blood_sample_data_Jan_Feb_2020.xlsx")
 ```
 
+
+
+Below some examaples of datas from dataset:
 ```{r show_head, warning=FALSE}
 kable(head(cov_cs_df, 5))
 ```
 
 
+Dataset has `r nrow(cov_cs_df)` rows and `r ncol(cov_cs_df)` columns.
+
+As we see, the dataset has a lot of columns. Below the meaning of each of them:
+<ol>
+  <li> PATIENT_ID - identifier of patient in dataset; in dataset is `r max(cov_cs_df$PATIENT_ID, na.rm=TRUE)` unique patients </li>
+  <li> RE_DATE - date of research; first research was made `r min(cov_cs_df$RE_DATE, na.rm=TRUE)` and the last was made `r max(cov_cs_df$RE_DATE, na.rm=TRUE)`</li>
+  <li> age - age of patient; the youngest patient was `r min(cov_cs_df$age, na.rm=TRUE)` years old and the oldest was `r max(cov_cs_df$age, na.rm=TRUE)` years old</li>
+  <li> gender - sex of the patients </li>
+  <li> Admission time - date of the admission patient; first patient was admit `r min(cov_cs_df$"Admission time", na.rm=TRUE)` and the last was `r max(cov_cs_df$"Admission time", na.rm=TRUE)` </li>
+  <li> Discharge time - date of the discharge patient; first patient was discharge `r min(cov_cs_df$"Discharge time", na.rm=TRUE)` and the last was `r min(cov_cs_df$"Discharge time", na.rm=TRUE)`</li>
+  <li> outcome - did the patient survived or died</li>
+  <li> Hypersensitive cardiac troponin I - cardiac troponins are the proteins that are part of the heart muscle cells; in the healthy person their concentration is close to zero but it rises after hearth attack </li>
+  <li>hemoglobin - it is responsible for the red color of blood and its primary fucntion is to transport oxygen; Hemoglobin norms in adults:
+    <ul>
+      <li> women - 12,0 - 16,0 g/dl (7,2 - 10,0 mmol/l) </li>
+      <li> men - 14,0- 18,0 g/dl (7,8 - 11,3 mmol/l) </li>
+      <li> pregnant women - 11 – 14 g/dl (6,9–8,8 mmol/l) </li>
+    </ul>
+  </li>
+  <li> Serum chloride - Chlorine is the major anion of the extracellular factor, inlcuding blood plasma; The proper concentration of chlorides in the blood ensures the proper functioning of the neuromuscular and digestive systems; normal concentraion of chloride in the blood: 95–105 mmol/l. The concentration in women is on average slightly higher (by 2–2.5 mmol/l) in women than in men  </li>
+  <li> Prothrombin time - it is a parameter describing efficiency of the extrinsic coagulation system; normal result is 12 - 16 seconds </li>
+  <li> procalcitonin - PCT is a substance whose presence in the blood indicates a bacterial infection. Testing procalcitonin levels allows early diagnosis of infection, even when no symptoms are present yet; in the healthy person the condensation is low (<0.1 ng/mL) but when it is > 0.5 ng/mL it is characteristic for bacterial infection </li>
+  <li> eosinophils(%) - it is a type of white blood cell, also known as leukocytes; their main task is to participate in the immune response of our body;  the correct percentage of eosinophils as a component of leukocytes, depending on the adopted standards, ranges from 1-5%</li>
+  <li> Interleukin 2 receptor - it is cytokine (protein) that incluences, among other things, the activity of lymphocytes.</li>
+  <li> Alkaline phosphatase - known as ALP, is an enzyme that occurs in many cells of the human body; depending on the place of occurrence reaches different concentrations; the norms are established based on the age of patient  </li>
+  <li> albumin - is the main serum protein procued in the liver; their main role in the human body is to transport hormones(e.g. cortisol) drugs (e.g. antibiotics) as well as vitamins, fatty acids and lipids; the norms depends e.g. age of patient, gender, determination method; approximate norms for particular periods of life:
+    <ul>
+      <li> children (not preterm): 4.6-7.4 g/dl </li>
+      <li> 7-19 years: 3.7-5.6 g/dl </li>
+      <li> adults: 3.5-5.5 g/dl </li>
+    </ul>
+  </li>
+  <li> basophil(%) - they are one of the morphotic components of blood; make up only about 1% of leukocytes, i.e. white blood cells; they are involved in boyd's defense against penetrating microorganisms; it is assumed that basophils should be up to 1% of leukocytes, that is, all white blood cells</li>
+  <li> Interleukin 10 - it is a cytokine (protein); their main function is to block inflammatory process </li>
+  <li> Total bilirubin - direct and indirect bilirubin form total bilirubin - a yellow pigment, a product of breakdown of red blood cells; the norm for total bilirubin is 0,2-1,1 mg% (3,42-20,6 µmol/l) </li>
+  <li> Platelet count - thrombocytes, or platelets, are, next to white and red blood cells, blood cells; platelets play a key role in the clotting process;	 the normal count of platelets is 150-400 thousand on µl </li>
+  <li> monocytes(%) - are white blood cells and are the largest blood cells in our bloodstream; have, among others the ability to phagocytose bacteria and to produce various mediators of the immune response, such as interferon; the norm for the adults is 4-8% of total amount among all leukocytes </li>
+  <li> antithrombin - it is an antigen synthesized mainly in the liver and endothelium of blood vessels. megakaryocytes and platelets; in a healthy human, plasma is from 20 to 29 IU/ml with an activity of 75-150%; antithrombin is the main inhibitor of plasma thrombin and is therefore used to assesss the state of coagulation system </li>
+  <li> Interleukin 8 - it is a cytokine that stimulates the migration of immune cells in the body; this means that it stimulates the movement and spread of T lymphocytes, neutrophils and monocytes; this action is is defensive in nature </li>
+  <li> indirect bilirubin - indirect bilirubin is a part of total bilirubin; the norms for indirect bilirubin is 0.2 – 1.0 mg/dl </li>
+  <li> Red blood cell distribution width - this indicator in blood counts tells what the volume differences are between individual red blood cells in a patient; the values are given in femtoliters (fl); generally, 36-47 fl is considered the standard </li>
+  <li> neutrophils(%) - this is the most numerous group of white blood cells of the immune system; the task of neutrophils is to protect the body against infections and diseases (they provide so-called cellular immunity); both their low blod level and excess can indicate many serious diseases; the norm for neutrophils is 60-70% of all white blood cells </li>
+  <li> total protein - it is a laboratory test that measures the concentration of all proteins in the blood; protein is an important componen of plasma. It maintains adequate pressure inside blood vessels, transport nutrients, is involved in the coagulation processes and in the defense of the body; the correct level of total protein is between 60 and 60 g/l or between 6 and 8 g/dl </li>
+  <li> Quantification of Treponema pallidum antibodies - Treponema pallidum is a bacteriom that is the etiological factor of venereal disease, syphilis. </li>
+  <li> Prothrombin activity - this is a protein factor; is responsible for the formation of thrombin; the so-called Quick's Index, i.e. the percentage of the norm - the correct result is in the range of 70-130%</li>
+  <li> HBsAg - it is an antigen, a surface protein; its presence may indicate hepatitis B or a carrier of KBV; the presence of HBsAg is checked in the blood serum </li>
+  <li> mean corpuscular volume - known as MCV; it is an indicator showing the volume of red blood cells, i.e. erythrocytes; the reference range for MCV is assumed to be 82-82 fl </li>
+  <li> hematocrit - it is a ratio of blood cell volume to total blood cell volume to total blood volume; it is expressed as a percentage; the results depend primarily on the age, sex, study population; physical effort the the patient is engaged in, and even the method of determining; sample norms for specific sexes are as follows:
+    <ul>
+      <li> Womes: 36.1-44.3% </li>
+      <li> Males: 40.7-50.3%</li>
+    </ul>
+  </li>
+  <li> White blood cell count - leukocytes are white blood cells; in the human body, leukocytes play a very important role in the functioning of the immune system - they protect against cancer and infections; example of norms for blood leukocytes for adults are 4-10 thousand/μl </li>
+  <li> Tumor necrosis factor α - it is a cytokine (protein) associated with the inflammatory process, produced mainly by active monocytes and macrophages, and in much smaller amounts by other tissues; the primary role of the tumor necrosis factor in the body is to modulate the inflammatory response; the norm o TFA-α is under 16 pg/ml </li>
+  <li> mean corpuscular hemoglobin concentration - the norms for mean corpuscular hemoglobin concentration are between 19.2 and 23.6 mmol/l</li>
+  <li> fibrinogen - it is a protein involved in the blood clotting prcess; the norm is 2-5 g/l </li>
+  <li> Interleukin 1β - it is a cytokine that are crucial in the process of inflammation; it is produced in response to various types of antigens; the factors that stimulate its production can be bacteria, viruses or fungi; acts as a universal stimulant of the inflammatory response; it also has the ability to stimulate cells to produce other pro-inflammatory cytokines </li>
+  <li> Urea	- is the final product of protein metabolism in the body and as such is an indicator of kidney function; the appropriate standard of urea concentration is 2.5-6.7 mmol/l </li>
+  <li> lymphocyte count - lymphocytes are a group of leukocytes - white blood cells; they protect us against infections and the development of cancer; the norm in an adult i sbetween 1000 and 5000; both their excess and their shortage may have serious consequences </li>
+  <li> PH value - is a test that is ordered to confirm respiratory disorders; norms for pH (normal arterial blood: 7.35-7.45; venous blood: 7.32-7.42) </li>
+  <li> Red blood cell count - the norms of erythrocytes in adults:
+    <ul>
+      <li> women: 4.2-5.4 million/mm³ </li>
+      <li> males: 4.5-5.9 million/mm³ </li>
+    </ul>
+  </li>
+  <li> Eosinophil count - the normal number of eosinophils in peripheral blood is 35-350 in 1 mm³ (mean is 125) </li>
+  <li> Corrected calcium - calcium is a macronutrient element - its content in the adult human body is about 20-25 g/kg of lean body mass; calcium formula corrected calculates the theoretical concentration of calcium in a patient if the serum albumin concentration was 40 g/l; the reference values are 8.8-10.6 mg/dl </li>
+  <li> Serum potassium - the test is designed to determine the concentration of potassium in the blood serum; the normal level is 3.5-5.0 mmol/l</li>
+  <li> glucose - is a simple sugar that is the primary source of energy in the human body; it is needed for human organs to function properly; the blood sugar value depends on the patient's age - for the adults norm is 3.9-5.5 mmol/l</li>
+  <li> neutrophils count - the reference values for the amount of neutrophils in the blood are 1800-8000/μl - that is the number of cells per microliter of blood tested </li>
+  <li> Direct bilirubin - direct bilirubin is a part of total bilirubin; the norm between 1.7-6.8 µmol/l </li>
+  <li> Mean platelet volume - normally, the value of average platelet volume ranges between 9 and 12.6 μm³ </li>
+  <li> ferritin - it is an acute phase protein (its level increases when inflammation develops), found in the bone marrow, liver and spleen, kidneys and skeletal muscles; ferritin is a specific store of iron that protects the body in the event of incresed demand for this element and procets against its excess; in women, the level of ferritin should not exceed 200 mcg/l, in men 400 mcg/l and the result below 12 mcg/l indicates a deficiency</li>
+  <li> RBC distribution width SD </li>
+  <li> Thrombin time </li>
+  <li> (%)lymphocyte </li>
+  <li> HCV antibody quantification </li>
+  <li> D-D dimer </li>
+  <li> Total cholesterol </li>
+  <li> aspartate aminotransferase </li>
+  <li> Uric acid </li>
+  <li> HCO3- </li>
+  <li> calcium </li>
+  <li> Amino-terminal brain natriuretic peptide precursor(NT-proBNP) </li>
+  <li> Lactate dehydrogenase </li>
+  <li> platelet large cell ratio </li>
+  <li> Interleukin 6 </li>
+  <li> Fibrin degradation products </li>
+  <li> monocytes count </li>
+  <li> PLT distribution width </li>
+  <li> globulin </li>
+  <li> γ-glutamyl transpeptidase </li>
+  <li> International standard ratio </li>
+  <li> basophil count(#) </li>
+  <li> 2019-nCoV nucleic acid detection </li>
+  <li> mean corpuscular hemoglobin </li>
+  <li> Activation of partial thromboplastin time </li>
+  <li> High sensitivity C-reactive protein </li>
+  <li> HIV antibody quantification </li>
+  <li> serum sodium </li>
+  <li> thrombocytocrit </li>
+  <li> ESR </li>
+  <li> glutamic-pyruvic transaminase </li>
+  <li> eGFR </li>
+  <li> creatinine </li>
+</ol>
 
 
+
+### Cleaning Process
+That shows us, the dataset is illegible. Fisrt, we need to clean data to enhance readability of dataset.
+
+```{r cleaning_data}
+data_df <- cov_cs_df %>%
+              mutate(gender = as.factor(ifelse(gender==1, "male", "female"))) %>%
+              mutate(outcome = as.factor(ifelse(outcome == 0, "survived", "died"))) %>%
+              rename(admission_time = 'Admission time',
+                     discharge_time = 'Discharge time')
+
+patients_df <- data_df %>%
+                select(PATIENT_ID, age, gender, admission_time, discharge_time, outcome) %>%
+                drop_na(PATIENT_ID) %>%
+                mutate("hospitalization_length" = seconds_to_period(difftime(discharge_time,
+                                                                             admission_time,
+                                                                             units = "days" ))) %>%
+                relocate(hospitalization_length, .after = discharge_time)
+
+data_df <- data_df %>% 
+            fill(PATIENT_ID)
+```
+
+After clean process, the dataset looks like below.
+
+```{r after_cleaning}
+kable(head(data_df[1:8], 10))
+```
+
+Below short summary of clean dataset.
+
+```{r summary_clean_df, warning=FALSE, error=FALSE}
+kable(data_df$HBsAg)
+#tbl_summary(
+#  data_df,
+#  by = outcome,
+#  label = gender ~ "Gender"
+#) %>%
+#  add_n() %>%
+#  modify_header(label = "") %>%
+#  add_overall() %>%
+#  bold_labels()
+```
+
+
+With clean dataset, it is possible to start analyse dataset.
+
+## Proper part
+### Plots including data about gender, age and hospitalization length
+
+First, we can check number of patients divided into genders.
+```{r patients_gender_plot, fig.width=10}
+gender_bar_plot <- ggplot(patients_df, aes(x = gender, fill = gender)) +
+                geom_bar() + 
+                labs(title = "Number of patients divided into gender",
+                    x = "Gender",
+                    y = "Number of patients",
+                fill = "Gender")
+ggplotly(gender_bar_plot)
+```
+
+
+Below the chart showing ages of patients.
+```{r patients_age_gender_hist, fig.width=10}
+gender_age_hist <- ggplot(patients_df, aes(x = age, fill=gender)) +
+                    geom_histogram(binwidth = 5.0) +
+                    labs(title = "Histogram of patients age and genders.",
+                         x = "Age",
+                         y = "Number of patients",
+                         fill = "Gender") +
+                    scale_x_continuous(breaks = seq(0, max(patients_df$age), 5))
+ggplotly(gender_age_hist)
+```
+
+It is possible to create two histograms for each gender.
+```{r patients_age_gender_hists, fig.width=10, warning=FALSE}
+gender_age_histograms <- ggplot(patients_df, aes(x = age, fill=gender)) +
+                          geom_histogram(binwidth = 5.0) +
+                          facet_wrap(~gender) +
+                          labs(title = "Histogram of patients age and genders.",
+                               x = "Age",
+                               y = "Number of patients",
+                               fill = "Gender") +
+                          scale_x_continuous(breaks = seq(0, max(patients_df$age), 5))
+ggplotly(gender_age_histograms)
+```
+
+
+Let show the histograms about outcome due to hospitalization length.
+First, histogram including each genders.
+```{r patients_hospitalization_length, fig.width = 10}
+hosp_length_hist <- ggplot(patients_df, aes(x = hospitalization_length, fill = gender)) + 
+                      geom_histogram(binwidth = 1.0) +
+                      scale_x_continuous(breaks=seq(0, max(patients_df$hospitalization_length), 1)) +
+                      labs(title = "Number of patients and their hospitalization length",
+                           x = "Hospitalization length (in days)",
+                           y = "Number of patients", 
+                           fill= "Gender")
+
+ggplotly(hosp_length_hist)
+```
+
+
+Next chart will be the histogram including information about did the patient survived or died.
+```{r patients_hosp_length_outcome, fig.width = 10}
+hosp_length_outcome_hist <- ggplot(patients_df, aes(x = hospitalization_length,
+                                                    fill = outcome)) +
+                              geom_histogram(binwidth = 1.0) +
+                              scale_x_continuous(breaks = seq(0, max(patients_df$hospitalization_length), 1)) +
+                              labs(title = "Number of patients, their hospitalization length and outcome (survived or died)",
+                                   x = "Hospitalization length (in days)",
+                                   y = "Number of patients",
+                                   fill = "Outcome")
+
+ggplotly(hosp_length_outcome_hist)
+```
+
+Next, the histograms including every information above, but divided by genders and outcomes.
+```{r patients_hosp_length_groups, fig.width = 10}
+hosp_length_outcomes_hists <- ggplot(patients_df, aes(x = hospitalization_length,
+                                                    fill = outcome)) +
+                              geom_histogram(binwidth = 1.0) +
+                              facet_wrap(gender~outcome) +
+                              scale_x_continuous(breaks = seq(0, max(patients_df$hospitalization_length), 5)) +
+                              scale_y_continuous(breaks = seq(0, 20, 4)) +
+                              labs(title = "Number of patients, their hospitalization length and outcome (survived or died)",
+                                   x = "Hospitalization length (in days)",
+                                   y = "Number of patients",
+                                   fill = "Outcome")
+
+ggplotly(hosp_length_outcomes_hists)
+```
