@@ -60,109 +60,123 @@ Dataset has `r nrow(cov_cs_df)` rows and `r ncol(cov_cs_df)` columns.
 
 As we see, the dataset has a lot of columns. Below the meaning of each of them:
 <ol>
-  <li> PATIENT_ID - identifier of patient in dataset; in dataset is `r max(cov_cs_df$PATIENT_ID, na.rm=TRUE)` unique patients </li>
-  <li> RE_DATE - date of research; first research was made `r min(cov_cs_df$RE_DATE, na.rm=TRUE)` and the last was made `r max(cov_cs_df$RE_DATE, na.rm=TRUE)`</li>
-  <li> age - age of patient; the youngest patient was `r min(cov_cs_df$age, na.rm=TRUE)` years old and the oldest was `r max(cov_cs_df$age, na.rm=TRUE)` years old</li>
-  <li> gender - sex of the patients </li>
-  <li> Admission time - date of the admission patient; first patient was admit `r min(cov_cs_df$"Admission time", na.rm=TRUE)` and the last was `r max(cov_cs_df$"Admission time", na.rm=TRUE)` </li>
-  <li> Discharge time - date of the discharge patient; first patient was discharge `r min(cov_cs_df$"Discharge time", na.rm=TRUE)` and the last was `r min(cov_cs_df$"Discharge time", na.rm=TRUE)`</li>
-  <li> outcome - did the patient survived or died</li>
-  <li> Hypersensitive cardiac troponin I - cardiac troponins are the proteins that are part of the heart muscle cells; in the healthy person their concentration is close to zero but it rises after hearth attack </li>
-  <li>hemoglobin - it is responsible for the red color of blood and its primary fucntion is to transport oxygen; Hemoglobin norms in adults:
+  <li> <b> PATIENT_ID </b> - identifier of patient in dataset; in dataset is `r max(cov_cs_df$PATIENT_ID, na.rm=TRUE)` unique patients </li>
+  <li> <b> RE_DATE </b> - date of research; first research was made `r min(cov_cs_df$RE_DATE, na.rm=TRUE)` and the last was made `r max(cov_cs_df$RE_DATE, na.rm=TRUE)`</li>
+  <li> <b> age </b> - age of patient; the youngest patient was `r min(cov_cs_df$age, na.rm=TRUE)` years old and the oldest was `r max(cov_cs_df$age, na.rm=TRUE)` years old</li>
+  <li> <b> gender </b> - sex of the patients </li>
+  <li> <b> Admission time </b> - date of the admission patient; first patient was admit `r min(cov_cs_df$"Admission time", na.rm=TRUE)` and the last was `r max(cov_cs_df$"Admission time", na.rm=TRUE)` </li>
+  <li> <b> Discharge time </b> - date of the discharge patient; first patient was discharge `r min(cov_cs_df$"Discharge time", na.rm=TRUE)` and the last was `r min(cov_cs_df$"Discharge time", na.rm=TRUE)`</li>
+  <li> <b> outcome </b> - did the patient survived or died</li>
+  <li> <b> Hypersensitive cardiac troponin I </b> - cardiac troponins are the proteins that are part of the heart muscle cells; in the healthy person their concentration is close to zero but it rises after hearth attack </li>
+  <li> <b> hemoglobin </b> - it is responsible for the red color of blood and its primary fucntion is to transport oxygen; Hemoglobin norms in adults:
     <ul>
       <li> women - 12,0 - 16,0 g/dl (7,2 - 10,0 mmol/l) </li>
       <li> men - 14,0- 18,0 g/dl (7,8 - 11,3 mmol/l) </li>
       <li> pregnant women - 11 – 14 g/dl (6,9–8,8 mmol/l) </li>
     </ul>
   </li>
-  <li> Serum chloride - Chlorine is the major anion of the extracellular factor, inlcuding blood plasma; The proper concentration of chlorides in the blood ensures the proper functioning of the neuromuscular and digestive systems; normal concentraion of chloride in the blood: 95–105 mmol/l. The concentration in women is on average slightly higher (by 2–2.5 mmol/l) in women than in men  </li>
-  <li> Prothrombin time - it is a parameter describing efficiency of the extrinsic coagulation system; normal result is 12 - 16 seconds </li>
-  <li> procalcitonin - PCT is a substance whose presence in the blood indicates a bacterial infection. Testing procalcitonin levels allows early diagnosis of infection, even when no symptoms are present yet; in the healthy person the condensation is low (<0.1 ng/mL) but when it is > 0.5 ng/mL it is characteristic for bacterial infection </li>
-  <li> eosinophils(%) - it is a type of white blood cell, also known as leukocytes; their main task is to participate in the immune response of our body;  the correct percentage of eosinophils as a component of leukocytes, depending on the adopted standards, ranges from 1-5%</li>
-  <li> Interleukin 2 receptor - it is cytokine (protein) that incluences, among other things, the activity of lymphocytes.</li>
-  <li> Alkaline phosphatase - known as ALP, is an enzyme that occurs in many cells of the human body; depending on the place of occurrence reaches different concentrations; the norms are established based on the age of patient  </li>
-  <li> albumin - is the main serum protein procued in the liver; their main role in the human body is to transport hormones(e.g. cortisol) drugs (e.g. antibiotics) as well as vitamins, fatty acids and lipids; the norms depends e.g. age of patient, gender, determination method; approximate norms for particular periods of life:
+  <li> <b> Serum chloride </b> - Chlorine is the major anion of the extracellular factor, inlcuding blood plasma; The proper concentration of chlorides in the blood ensures the proper functioning of the neuromuscular and digestive systems; normal concentraion of chloride in the blood: 95–105 mmol/l. The concentration in women is on average slightly higher (by 2–2.5 mmol/l) in women than in men  </li>
+  <li> <b> Prothrombin time </b> - it is a parameter describing efficiency of the extrinsic coagulation system; normal result is 12 - 16 seconds </li>
+  <li> <b> procalcitonin </b> - PCT is a substance whose presence in the blood indicates a bacterial infection. Testing procalcitonin levels allows early diagnosis of infection, even when no symptoms are present yet; in the healthy person the condensation is low (<0.1 ng/mL) but when it is > 0.5 ng/mL it is characteristic for bacterial infection </li>
+  <li> <b> eosinophils(%) </b> - it is a type of white blood cell, also known as leukocytes; their main task is to participate in the immune response of our body;  the correct percentage of eosinophils as a component of leukocytes, depending on the adopted standards, ranges from 1-5%</li>
+  <li> <b> Interleukin 2 receptor </b> - it is cytokine (protein) that incluences, among other things, the activity of lymphocytes.</li>
+  <li> <b> Alkaline phosphatase </b> - known as ALP, is an enzyme that occurs in many cells of the human body; depending on the place of occurrence reaches different concentrations; the norms are established based on the age of patient  </li>
+  <li> <b> albumin </b> - is the main serum protein procued in the liver; their main role in the human body is to transport hormones(e.g. cortisol) drugs (e.g. antibiotics) as well as vitamins, fatty acids and lipids; the norms depends e.g. age of patient, gender, determination method; approximate norms for particular periods of life:
     <ul>
       <li> children (not preterm): 4.6-7.4 g/dl </li>
       <li> 7-19 years: 3.7-5.6 g/dl </li>
       <li> adults: 3.5-5.5 g/dl </li>
     </ul>
   </li>
-  <li> basophil(%) - they are one of the morphotic components of blood; make up only about 1% of leukocytes, i.e. white blood cells; they are involved in boyd's defense against penetrating microorganisms; it is assumed that basophils should be up to 1% of leukocytes, that is, all white blood cells</li>
-  <li> Interleukin 10 - it is a cytokine (protein); their main function is to block inflammatory process </li>
-  <li> Total bilirubin - direct and indirect bilirubin form total bilirubin - a yellow pigment, a product of breakdown of red blood cells; the norm for total bilirubin is 0,2-1,1 mg% (3,42-20,6 µmol/l) </li>
-  <li> Platelet count - thrombocytes, or platelets, are, next to white and red blood cells, blood cells; platelets play a key role in the clotting process;	 the normal count of platelets is 150-400 thousand on µl </li>
-  <li> monocytes(%) - are white blood cells and are the largest blood cells in our bloodstream; have, among others the ability to phagocytose bacteria and to produce various mediators of the immune response, such as interferon; the norm for the adults is 4-8% of total amount among all leukocytes </li>
-  <li> antithrombin - it is an antigen synthesized mainly in the liver and endothelium of blood vessels. megakaryocytes and platelets; in a healthy human, plasma is from 20 to 29 IU/ml with an activity of 75-150%; antithrombin is the main inhibitor of plasma thrombin and is therefore used to assesss the state of coagulation system </li>
-  <li> Interleukin 8 - it is a cytokine that stimulates the migration of immune cells in the body; this means that it stimulates the movement and spread of T lymphocytes, neutrophils and monocytes; this action is is defensive in nature </li>
-  <li> indirect bilirubin - indirect bilirubin is a part of total bilirubin; the norms for indirect bilirubin is 0.2 – 1.0 mg/dl </li>
-  <li> Red blood cell distribution width - this indicator in blood counts tells what the volume differences are between individual red blood cells in a patient; the values are given in femtoliters (fl); generally, 36-47 fl is considered the standard </li>
-  <li> neutrophils(%) - this is the most numerous group of white blood cells of the immune system; the task of neutrophils is to protect the body against infections and diseases (they provide so-called cellular immunity); both their low blod level and excess can indicate many serious diseases; the norm for neutrophils is 60-70% of all white blood cells </li>
-  <li> total protein - it is a laboratory test that measures the concentration of all proteins in the blood; protein is an important componen of plasma. It maintains adequate pressure inside blood vessels, transport nutrients, is involved in the coagulation processes and in the defense of the body; the correct level of total protein is between 60 and 60 g/l or between 6 and 8 g/dl </li>
-  <li> Quantification of Treponema pallidum antibodies - Treponema pallidum is a bacteriom that is the etiological factor of venereal disease, syphilis. </li>
-  <li> Prothrombin activity - this is a protein factor; is responsible for the formation of thrombin; the so-called Quick's Index, i.e. the percentage of the norm - the correct result is in the range of 70-130%</li>
-  <li> HBsAg - it is an antigen, a surface protein; its presence may indicate hepatitis B or a carrier of KBV; the presence of HBsAg is checked in the blood serum </li>
-  <li> mean corpuscular volume - known as MCV; it is an indicator showing the volume of red blood cells, i.e. erythrocytes; the reference range for MCV is assumed to be 82-82 fl </li>
-  <li> hematocrit - it is a ratio of blood cell volume to total blood cell volume to total blood volume; it is expressed as a percentage; the results depend primarily on the age, sex, study population; physical effort the the patient is engaged in, and even the method of determining; sample norms for specific sexes are as follows:
+  <li> <b> basophil(%) </b> - they are one of the morphotic components of blood; make up only about 1% of leukocytes, i.e. white blood cells; they are involved in boyd's defense against penetrating microorganisms; it is assumed that basophils should be up to 1% of leukocytes, that is, all white blood cells</li>
+  <li> <b> Interleukin 10 </b> - it is a cytokine (protein); their main function is to block inflammatory process </li>
+  <li> <b> Total bilirubin </b> - direct and indirect bilirubin form total bilirubin - a yellow pigment, a product of breakdown of red blood cells; the norm for total bilirubin is 0,2-1,1 mg% (3,42-20,6 µmol/l) </li>
+  <li> <b> Platelet count </b> - thrombocytes, or platelets, are, next to white and red blood cells, blood cells; platelets play a key role in the clotting process;	 the normal count of platelets is 150-400 thousand on µl </li>
+  <li> <b> monocytes(%) </b> - are white blood cells and are the largest blood cells in our bloodstream; have, among others the ability to phagocytose bacteria and to produce various mediators of the immune response, such as interferon; the norm for the adults is 4-8% of total amount among all leukocytes </li>
+  <li> <b> antithrombin </b> - it is an antigen synthesized mainly in the liver and endothelium of blood vessels. megakaryocytes and platelets; in a healthy human, plasma is from 20 to 29 IU/ml with an activity of 75-150%; antithrombin is the main inhibitor of plasma thrombin and is therefore used to assesss the state of coagulation system </li>
+  <li> <b> Interleukin 8 </b> - it is a cytokine that stimulates the migration of immune cells in the body; this means that it stimulates the movement and spread of T lymphocytes, neutrophils and monocytes; this action is is defensive in nature </li>
+  <li> <b> indirect bilirubin </b> - indirect bilirubin is a part of total bilirubin; the norms for indirect bilirubin is 0.2 – 1.0 mg/dl </li>
+  <li> <b> Red blood cell distribution width </b> - this indicator in blood counts tells what the volume differences are between individual red blood cells in a patient; the values are given in femtoliters (fl); generally, 36-47 fl is considered the standard </li>
+  <li> <b> neutrophils(%) </b> - this is the most numerous group of white blood cells of the immune system; the task of neutrophils is to protect the body against infections and diseases (they provide so-called cellular immunity); both their low blod level and excess can indicate many serious diseases; the norm for neutrophils is 60-70% of all white blood cells </li>
+  <li> <b> total protein </b> - it is a laboratory test that measures the concentration of all proteins in the blood; protein is an important componen of plasma. It maintains adequate pressure inside blood vessels, transport nutrients, is involved in the coagulation processes and in the defense of the body; the correct level of total protein is between 60 and 60 g/l or between 6 and 8 g/dl </li>
+  <li> <b> Quantification of Treponema pallidum antibodies </b> - Treponema pallidum is a bacteriom that is the etiological factor of venereal disease, syphilis. </li>
+  <li> <b> Prothrombin activity </b> - this is a protein factor; is responsible for the formation of thrombin; the so-called Quick's Index, i.e. the percentage of the norm - the correct result is in the range of 70-130%</li>
+  <li> <b> HBsAg </b> - it is an antigen, a surface protein; its presence may indicate hepatitis B or a carrier of KBV; the presence of HBsAg is checked in the blood serum </li>
+  <li> <b> mean corpuscular volume </b> - known as MCV; it is an indicator showing the volume of red blood cells, i.e. erythrocytes; the reference range for MCV is assumed to be 82-82 fl </li>
+  <li> <b> hematocrit </b> - it is a ratio of blood cell volume to total blood cell volume to total blood volume; it is expressed as a percentage; the results depend primarily on the age, sex, study population; physical effort the the patient is engaged in, and even the method of determining; sample norms for specific sexes are as follows:
     <ul>
       <li> Womes: 36.1-44.3% </li>
       <li> Males: 40.7-50.3%</li>
     </ul>
   </li>
-  <li> White blood cell count - leukocytes are white blood cells; in the human body, leukocytes play a very important role in the functioning of the immune system - they protect against cancer and infections; example of norms for blood leukocytes for adults are 4-10 thousand/μl </li>
-  <li> Tumor necrosis factor α - it is a cytokine (protein) associated with the inflammatory process, produced mainly by active monocytes and macrophages, and in much smaller amounts by other tissues; the primary role of the tumor necrosis factor in the body is to modulate the inflammatory response; the norm o TFA-α is under 16 pg/ml </li>
-  <li> mean corpuscular hemoglobin concentration - the norms for mean corpuscular hemoglobin concentration are between 19.2 and 23.6 mmol/l</li>
-  <li> fibrinogen - it is a protein involved in the blood clotting prcess; the norm is 2-5 g/l </li>
-  <li> Interleukin 1β - it is a cytokine that are crucial in the process of inflammation; it is produced in response to various types of antigens; the factors that stimulate its production can be bacteria, viruses or fungi; acts as a universal stimulant of the inflammatory response; it also has the ability to stimulate cells to produce other pro-inflammatory cytokines </li>
-  <li> Urea	- is the final product of protein metabolism in the body and as such is an indicator of kidney function; the appropriate standard of urea concentration is 2.5-6.7 mmol/l </li>
-  <li> lymphocyte count - lymphocytes are a group of leukocytes - white blood cells; they protect us against infections and the development of cancer; the norm in an adult i sbetween 1000 and 5000; both their excess and their shortage may have serious consequences </li>
-  <li> PH value - is a test that is ordered to confirm respiratory disorders; norms for pH (normal arterial blood: 7.35-7.45; venous blood: 7.32-7.42) </li>
-  <li> Red blood cell count - the norms of erythrocytes in adults:
+  <li> <b> White blood cell count </b> - leukocytes are white blood cells; in the human body, leukocytes play a very important role in the functioning of the immune system - they protect against cancer and infections; example of norms for blood leukocytes for adults are 4-10 thousand/μl </li>
+  <li> <b> Tumor necrosis factor α </b> - it is a cytokine (protein) associated with the inflammatory process, produced mainly by active monocytes and macrophages, and in much smaller amounts by other tissues; the primary role of the tumor necrosis factor in the body is to modulate the inflammatory response; the norm o TFA-α is under 16 pg/ml </li>
+  <li> <b> mean corpuscular hemoglobin concentration </b> - the norms for mean corpuscular hemoglobin concentration are between 19.2 and 23.6 mmol/l</li>
+  <li> <b> fibrinogen </b> - it is a protein involved in the blood clotting prcess; the norm is 2-5 g/l </li>
+  <li> <b> Interleukin 1β </b> - it is a cytokine that are crucial in the process of inflammation; it is produced in response to various types of antigens; the factors that stimulate its production can be bacteria, viruses or fungi; acts as a universal stimulant of the inflammatory response; it also has the ability to stimulate cells to produce other pro-inflammatory cytokines </li>
+  <li> <b> Urea </b>	- is the final product of protein metabolism in the body and as such is an indicator of kidney function; the appropriate standard of urea concentration is 2.5-6.7 mmol/l </li>
+  <li> <b> lymphocyte count </b> - lymphocytes are a group of leukocytes - white blood cells; they protect us against infections and the development of cancer; the norm in an adult i sbetween 1000 and 5000; both their excess and their shortage may have serious consequences </li>
+  <li> <b> PH value </b> - is a test that is ordered to confirm respiratory disorders; norms for pH (normal arterial blood: 7.35-7.45; venous blood: 7.32-7.42) </li>
+  <li> <b> Red blood cell count </b> - the norms of erythrocytes in adults:
     <ul>
       <li> women: 4.2-5.4 million/mm³ </li>
       <li> males: 4.5-5.9 million/mm³ </li>
     </ul>
   </li>
-  <li> Eosinophil count - the normal number of eosinophils in peripheral blood is 35-350 in 1 mm³ (mean is 125) </li>
-  <li> Corrected calcium - calcium is a macronutrient element - its content in the adult human body is about 20-25 g/kg of lean body mass; calcium formula corrected calculates the theoretical concentration of calcium in a patient if the serum albumin concentration was 40 g/l; the reference values are 8.8-10.6 mg/dl </li>
-  <li> Serum potassium - the test is designed to determine the concentration of potassium in the blood serum; the normal level is 3.5-5.0 mmol/l</li>
-  <li> glucose - is a simple sugar that is the primary source of energy in the human body; it is needed for human organs to function properly; the blood sugar value depends on the patient's age - for the adults norm is 3.9-5.5 mmol/l</li>
-  <li> neutrophils count - the reference values for the amount of neutrophils in the blood are 1800-8000/μl - that is the number of cells per microliter of blood tested </li>
-  <li> Direct bilirubin - direct bilirubin is a part of total bilirubin; the norm between 1.7-6.8 µmol/l </li>
-  <li> Mean platelet volume - normally, the value of average platelet volume ranges between 9 and 12.6 μm³ </li>
-  <li> ferritin - it is an acute phase protein (its level increases when inflammation develops), found in the bone marrow, liver and spleen, kidneys and skeletal muscles; ferritin is a specific store of iron that protects the body in the event of incresed demand for this element and procets against its excess; in women, the level of ferritin should not exceed 200 mcg/l, in men 400 mcg/l and the result below 12 mcg/l indicates a deficiency</li>
-  <li> RBC distribution width SD </li>
-  <li> Thrombin time </li>
-  <li> (%)lymphocyte </li>
-  <li> HCV antibody quantification </li>
-  <li> D-D dimer </li>
-  <li> Total cholesterol </li>
-  <li> aspartate aminotransferase </li>
-  <li> Uric acid </li>
-  <li> HCO3- </li>
-  <li> calcium </li>
-  <li> Amino-terminal brain natriuretic peptide precursor(NT-proBNP) </li>
-  <li> Lactate dehydrogenase </li>
-  <li> platelet large cell ratio </li>
-  <li> Interleukin 6 </li>
-  <li> Fibrin degradation products </li>
-  <li> monocytes count </li>
-  <li> PLT distribution width </li>
-  <li> globulin </li>
-  <li> γ-glutamyl transpeptidase </li>
-  <li> International standard ratio </li>
-  <li> basophil count(#) </li>
-  <li> 2019-nCoV nucleic acid detection </li>
-  <li> mean corpuscular hemoglobin </li>
-  <li> Activation of partial thromboplastin time </li>
-  <li> High sensitivity C-reactive protein </li>
-  <li> HIV antibody quantification </li>
-  <li> serum sodium </li>
-  <li> thrombocytocrit </li>
-  <li> ESR </li>
-  <li> glutamic-pyruvic transaminase </li>
-  <li> eGFR </li>
-  <li> creatinine </li>
+  <li> <b> Eosinophil count </b> - the normal number of eosinophils in peripheral blood is 35-350 in 1 mm³ (mean is 125) </li>
+  <li> <b> Corrected calcium </b> - calcium is a macronutrient element - its content in the adult human body is about 20-25 g/kg of lean body mass; calcium formula corrected calculates the theoretical concentration of calcium in a patient if the serum albumin concentration was 40 g/l; the reference values are 8.8-10.6 mg/dl </li>
+  <li> <b> Serum potassium </b> - the test is designed to determine the concentration of potassium in the blood serum; the normal level is 3.5-5.0 mmol/l</li>
+  <li> <b> glucose </b> - is a simple sugar that is the primary source of energy in the human body; it is needed for human organs to function properly; the blood sugar value depends on the patient's age - for the adults norm is 3.9-5.5 mmol/l</li>
+  <li> <b> neutrophils count </b> - the reference values for the amount of neutrophils in the blood are 1800-8000/μl - that is the number of cells per microliter of blood tested </li>
+  <li> <b> Direct bilirubin </b> - direct bilirubin is a part of total bilirubin; the norm between 1.7-6.8 µmol/l </li>
+  <li> <b> Mean platelet volume </b> - normally, the value of average platelet volume ranges between 9 and 12.6 μm³ </li>
+  <li> <b> ferritin </b> - it is an acute phase protein (its level increases when inflammation develops), found in the bone marrow, liver and spleen, kidneys and skeletal muscles; ferritin is a specific store of iron that protects the body in the event of incresed demand for this element and procets against its excess; in women, the level of ferritin should not exceed 200 mcg/l, in men 400 mcg/l and the result below 12 mcg/l indicates a deficiency</li>
+  <li> <b> RBC distribution width SD </b> - is an indicator of red blood cell volume distribution; erythrocytes, or red blood cells are not indentical; the task of the RBC-SD index is to assess the differences in the volume of erythrocytes in the examined person; the RDW-SD norm is 36-47 fl (femtoliters) </li>
+  <li> <b> Thrombin time </b> - thrombin time (TT) is a diagnostic test that allows a partial assessment of the coagulation system; on the basis of TT, it can be determined how long it takes for the final stage of blood clotting, i.e. the conversion of fibrinogen to fibrin; the correct value of the thrombin time should be in the range from 12 to 24 second </li>
+  <li> <b> (%)lymphocyte </b> - normal percentage value of the lymphocyte is between 10-45% all white blood cells  </li>
+  <li> <b> HCV antibody quantification </b> - measurement of the amount of ribonucleic acid (RNA) of the hepatitis C virus (HCV) in the blood; an early response to treatment should be demonstrated by a fall viral load greater tha 2 logs after the first 12 weeks of treatment </li>
+  <li> <b> D-D dimer </b> - they are a product of the breakdown of fibrin - a protein precipitated from the blood plasma during the coagultion process; the concentrations of D-D dimers in the plasma increase during the increased production of fibrin, which is related to the formation of clots that impede the proper blood flow; the concentration of D-D dimers is considered normal less that 500 μg/l </li>
+  <li> <b> Total cholesterol </b> - it is producet in the liver and is supplied to the body with food and released into bloodstream; it is needed, among others the proper functioning of the nervous system; its excess may unfortunately increase the risk of a heart attack and stroke; for total cholesterol, it is assumed that the correct values shoudl be within the range of 200 mg/dl</li>
+  <li> <b> aspartate aminotransferase </b> - is an intracellular enzyme found in the liver, heart muscles, kidneys and red blood cells; it enters the blood when there is cell damage; if a biochemical test shows increased activity, it usually means that we are dealing with one of the liver diseases; the norm for aspartate aminotransferase is in the range from 5 to 40 U/l </li>
+  <li> <b> Uric acid </b> - it is an organic chemical compound that is one of the end products of metabolism; sometimes it accumulates in large amounts in the blood in the course of some metabolic diseases; the correct level of uric acid should be 180-420 µmol/l </li>
+  <li> <b> HCO3- </b> - is a test of plasma bicarbonate concentration; the standard is 22-28 mmol/l</li>
+  <li> <b>  calcium </b> - calcium is present in the serum in ionized Ca<sup>+2</sup> and bound form; decreased levels of calcium in the body (hypocalcaemia) are manifested by, among others, muscle cramps, joint pain, tingling and numbness; normal total calcium levels are 2.12-2.62 mmol/l </li>
+  <li> <b> Amino-terminal brain natriuretic peptide precursor(NT-proBNP) </b> - is a cardiac marker; NT-proBNP is performed when heart failure is suspected; during myocardial infarcion, a significant increase in NT-proBNP is observed; the norm of NT-proBNP plasa concentration is 68-112 pg/ml</li>
+  <li> <b> Lactate dehydrogenase </b> - it is an encyme that occurs in all cells of the human body; in the event of cell damage, lactate dehydrogenase is released from inside them, its concentration and activity increase in the blood; blood lactate dehydrogenase activity level is <480 IU/l </li>
+  <li> <b> platelet large cell ratio </b> - that is, the percentage of large as well as giant platelets in the blood in the test sample; this parameter indicates that there are platelets in the patient's bloodstream that are much larger than those within the specified for P-LCR is less than 30% of large platelets</li>
+  <li> <b> Interleukin 6 </b> - is a signaling molecule belonging to the group of cytokines; is responsible for initiating and developing the inflammatory response in the body </li>
+  <li> <b> Fibrin degradation products </b> - the degradation products of fibrinogen and fibrin are fragments of fibrin formes as a result of the intensification of the process of fibrinolysis - the breakdown of intravascular clots; they are formed by the action of plasmin on fibrin and fibrinogen; the norm is a result below 800 ng/ml </li>
+  <li> <b> monocytes count </b> - 30 to 800 monocytes per microliter of blood are considered normal</li>
+  <li> <b> PLT distribution width </b> - determines what percentage of all thrombocytes has different volume than a medium-sized thrombocyte; for PLT distribution width a value from 6.1 to 11 fl is normal</li>
+  <li> <b> globulin </b> - is responsible in the human body for modulating immune processes; the norm should be from 5 to 15 g/l </li>
+  <li> <b> γ-glutamyl transpeptidase </b> - (GGTP) is a membrane enzyme present in many tissues and body fluid of humans; the norm of GGTP activity in the blood is:
+    <ul>
+      <li> women: <35 IU/l</li>
+      <li> men: <40 IU/l </li>
+    </ul>
+  </li>
+  <li> <b> International standard ratio </b> - expresses prothrombin time which is one of the most important parameters in the examination of the coagulation system; under normal conditions, it is assumed that the norm is 0.8-1.2 </li>
+  <li> <b> basophil count(#) </b> - basophils are one of the morphotic components of the blood; they take part in the body's defense against penetrating microorganisms; it is assumed that basophils should constitute 0-300 cells per microliter of blood </li>
+  <li> <b> 2019-nCoV nucleic acid detection </b> - test that finds the presence of nucleic acid in the patient's blood </li>
+  <li> <b> mean corpuscular hemoglobin </b> - is an indicator of the average concentration of hemoglobin in the red blood cell; this parameter allows to assess the functionality of red blood cells in our body; the norm is 19.2-23.6 mmol/l </li>
+  <li> <b> Activation of partial thromboplastin time </b> - it is a test that measures the coagulation time of the plasma in the presence of kephalin and calcium ions after activation with kaolin clay; the test is performed when a deficiency of coagulation factors and fibrinogen is suspected; the norm is about 26-46 second </li>
+  <li> <b> High sensitivity C-reactive protein </b> - is a C-reactive protein i.e. one of the so-called acute phase proteins appearing in the blood as a consequence of inflammation; it is produced under the influence of inflammatory cytokines; tests are performed in cases where the risk of bacterial infection increases or there is such a suspiction based on existing symptoms; in a helthy person, the concentration is not high, not more than 5 mg/l </li>
+  <li> <b> HIV antibody quantification </b> - determination of HIV-1 genetic material in blood, useful in assessing the effectiveness of antiviral therapy and in the prognosis of AIDS development</li>
+  <li> <b> serum sodium </b> - the indicator for the test is suspected reduced concentration (so-called hyponatremia) or increased sodium concentration (so-called hypernatremia); the correct concentration is 135-145 mmol/l </li>
+  <li> <b> thrombocytocrit </b> - it is a device for estimating the platelet content of the blood (this is only one definition I found of thrombocytocrit in the internet. And I 100% sure it is wrong) </li>
+  <li> <b> ESR </b> - is the rate of descent of red blood cells over time; ESR norm depends on age and gender; ESR norms in blood test:
+    <ul>
+      <li> newborns: 0-2 mm/h </li>
+      <li> infants (from 6 month of age): 12-177 mm/h </li>
+      <li> women under 50: 6-11 mm/h </li>
+      <li> women over 50: up to 30 mm/h </li>
+      <li> males under 50: 3-8 mm/h </li>
+      <li> men over 50: up to 20 mm/h </li>
+    </ul>
+  </li>
+  <li> <b> glutamic-pyruvic transaminase </b> </li>
+  <li> <b> eGFR </b> </li>
+  <li> <b> creatinine </b> </li>
 </ol>
 
 
@@ -198,7 +212,7 @@ kable(head(data_df[1:8], 10))
 Below short summary of clean dataset.
 
 ```{r summary_clean_df, warning=FALSE, error=FALSE}
-kable(data_df$HBsAg)
+kable(data_df$"thrombocytocrit", na.rm=TRUE)
 #tbl_summary(
 #  data_df,
 #  by = outcome,
