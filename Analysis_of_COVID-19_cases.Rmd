@@ -23,10 +23,25 @@ gtsummary <- library(gtsummary)
 ```
 
 # Introduction
+In 2020, the entire world was shaken by the global SARS-CoV-2 pandemic. The first case was reported in China in mid-December 2019. The animal and seafood market in Wuhan, China, is indicated as source of the disease. A lot of countries introduced a state of emergency to limit the spread of the virus. Unfortunately, due to many interstate connections, the connections, the virus spread very quickly to many continents.
 
+The SARS-CoV-2 virus causes the COVID-19 disease, which the symptomps are very similar to those of the seasonal flu. The virus affects the respiratory organs, mainly the lungs.The disease is most dangerous for the elderly and people with so-called concomitant diseases (e.g. diabetes, lung diseases, cardiovascular diseases). Common symptoms of coronavirus infection are:
+<ul>
+  <li> High fever </li>
+  <li> Cough </li>
+  <li> Dyspnea </li>
+</ul>
+The disease may lead to complications, e.g. pneumonia, acute respiratory distress syndrome.
+
+To date (November 2020) there is no vaccine or effective antiviral drugs. Treatment is based on symptomatic treatment and supportive therapy (in the case of respiratory disorder). In order to counteract the spread of disease, frequent hand washing and surface disinfection are recommended.
+
+The economy was significantly affected by the pandemic. Many countries have decided on implementing the so-called Lockdown - a temporary shutdown of the economy in order to avoid rallying people and infecting others. The education system also suffered - online learning was introduced in many schools and universities.
+
+## About the document
+The following document is a coronavirus case study base on article [here article] published on May 14, 2020. The data concerns 375 patients from Wuhan region of China (Tongji Hospital). In the conducted analysis, the most discriminating biomarkers of patient mortality were identified using machine lerning tools. The problem was defined as a classification task, where the input data included blood samples and laboratory test results.
 
 ## Used libraries
-This report is using following libraries:
+This report is using following R libraries:
 <ul>
   <li>`r dplyr[1]`</li>
   <li>`r ggplot2[1]`</li>
@@ -38,27 +53,20 @@ This report is using following libraries:
   <li>`r gtsummary[1]`</li>
 </ul>
 
-
-# Analysis
-## Introductory part
-### Loading data
-At the beginning, we need to read data from flat file.
+## Dataset - description
+Data is import from flat file.
 
 ```{r load_datas, cache=TRUE}
 cov_cs_df <- read_excel("data\\wuhan_blood_sample_data_Jan_Feb_2020.xlsx")
 ```
 
 
-
-Below some examaples of datas from dataset:
+Dataset has `r nrow(cov_cs_df)` rows and `r ncol(cov_cs_df)` columns. It is too much to show them all. Below there is only few of columns:
 ```{r show_head, warning=FALSE}
-kable(head(cov_cs_df, 5))
+kable(head(cov_cs_df[1:10], 5))
 ```
 
-
-Dataset has `r nrow(cov_cs_df)` rows and `r ncol(cov_cs_df)` columns.
-
-As we see, the dataset has a lot of columns. Below the meaning of each of them:
+We see, that first 7 columns are describing patients, the others are about the result of the research of their blood. Below the meaning of each column:
 <ol>
   <li> <b> PATIENT_ID </b> - identifier of patient in dataset; in dataset is `r max(cov_cs_df$PATIENT_ID, na.rm=TRUE)` unique patients </li>
   <li> <b> RE_DATE </b> - date of research; first research was made `r min(cov_cs_df$RE_DATE, na.rm=TRUE)` and the last was made `r max(cov_cs_df$RE_DATE, na.rm=TRUE)`</li>
@@ -163,7 +171,7 @@ As we see, the dataset has a lot of columns. Below the meaning of each of them:
   <li> <b> High sensitivity C-reactive protein </b> - is a C-reactive protein i.e. one of the so-called acute phase proteins appearing in the blood as a consequence of inflammation; it is produced under the influence of inflammatory cytokines; tests are performed in cases where the risk of bacterial infection increases or there is such a suspiction based on existing symptoms; in a helthy person, the concentration is not high, not more than 5 mg/l </li>
   <li> <b> HIV antibody quantification </b> - determination of HIV-1 genetic material in blood, useful in assessing the effectiveness of antiviral therapy and in the prognosis of AIDS development</li>
   <li> <b> serum sodium </b> - the indicator for the test is suspected reduced concentration (so-called hyponatremia) or increased sodium concentration (so-called hypernatremia); the correct concentration is 135-145 mmol/l </li>
-  <li> <b> thrombocytocrit </b> - it is a device for estimating the platelet content of the blood (this is only one definition I found of thrombocytocrit in the internet. And I 100% sure it is wrong) </li>
+  <li> <b> thrombocytocrit </b> - is the ratio of thrombocyte volume to plasma; deviations may indicate a blood coagulation disored </li>
   <li> <b> ESR </b> - is the rate of descent of red blood cells over time; ESR norm depends on age and gender; ESR norms in blood test:
     <ul>
       <li> newborns: 0-2 mm/h </li>
@@ -174,13 +182,14 @@ As we see, the dataset has a lot of columns. Below the meaning of each of them:
       <li> men over 50: up to 20 mm/h </li>
     </ul>
   </li>
-  <li> <b> glutamic-pyruvic transaminase </b> </li>
-  <li> <b> eGFR </b> </li>
-  <li> <b> creatinine </b> </li>
+  <li> <b> glutamic-pyruvic transaminase </b> - it is the enzyme most commonly found in the liver, but is also found in skeletal muscle, heart muscle and kidneys; in a helthy person whose liver works properly, its level should be insignificant; the result considered as normal should not exceed 35-400 IU/l </li>
+  <li> <b> eGFR </b> - colloquially it is called glomerular filtration; this indicator is a measurement of the amount of blood that gets filtered by the kidneys; normally the result should be greater than or equal to 90 ml/min/1.73m<sup>2</sup> </li>
+  <li> <b> creatinine </b> - is a substance that is formed in our body as a result of metabolic changes from creatine phosphate by non-enzymatic breakdown of this compound; its concentration in blood and urine gives us information about the efficiency of our kidneys; the correct level of creatinine in the blood serum ranges from 53 to 115 μmol/l </li>
 </ol>
 
 
-
+# Analysis
+## Introductory Part
 ### Cleaning Process
 That shows us, the dataset is illegible. Fisrt, we need to clean data to enhance readability of dataset.
 
@@ -209,10 +218,10 @@ After clean process, the dataset looks like below.
 kable(head(data_df[1:8], 10))
 ```
 
+### Summary
 Below short summary of clean dataset.
 
 ```{r summary_clean_df, warning=FALSE, error=FALSE}
-kable(data_df$"thrombocytocrit", na.rm=TRUE)
 #tbl_summary(
 #  data_df,
 #  by = outcome,
@@ -311,4 +320,10 @@ hosp_length_outcomes_hists <- ggplot(patients_df, aes(x = hospitalization_length
                                    fill = "Outcome")
 
 ggplotly(hosp_length_outcomes_hists)
+```
+
+Next chart will show the number of patients death in next days
+```{r}
+
+kable(head(patients_death))
 ```
