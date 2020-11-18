@@ -19,6 +19,8 @@ tidyr <- library(tidyr)
 lubridate <- library(lubridate)
 plotly <- library(plotly)
 gtsummary <- library(gtsummary)
+gganimate <- library(gganimate)
+library(caret)
 
 ```
 
@@ -51,6 +53,7 @@ This report is using following R libraries:
   <li>`r lubridate[1]`</li>
   <li>`r plotly[1]`</li>
   <li>`r gtsummary[1]`</li>
+  <li>`r gganimate[1]`</li>
 </ul>
 
 ## Dataset - description
@@ -200,6 +203,10 @@ data_df <- cov_cs_df %>%
               rename(admission_time = 'Admission time',
                      discharge_time = 'Discharge time')
 
+colnames(data_df)[34] <- "Tumor_necrosis_factor_alfa"
+colnames(data_df)[37] <- "Interleukin_1_Beta"
+colnames(data_df)[68] <- "gamma_glutamyl_transpeptidase"
+
 patients_df <- data_df %>%
                 select(PATIENT_ID, age, gender, admission_time, discharge_time, outcome) %>%
                 drop_na(PATIENT_ID) %>%
@@ -212,9 +219,25 @@ data_df <- data_df %>%
             fill(PATIENT_ID)
 ```
 
-After clean process, the dataset looks like below.
+After replace NA values in PATIENT_ID, the dataset looks like below.
 
-```{r after_cleaning}
+```{r after_cleaning_1}
+kable(head(data_df[1:8], 10))
+```
+
+Still, we see, there is a NA values in others column. This requires replacing these values. It is possible to do it in many ways, but here, the NA values in each column will be replace by median of the values in column.
+
+```{r median_instead_na_val, warning=FALSE}
+for(i in 8:ncol(data_df))
+{
+  val <- data_df[i]
+  val[is.na(val)] <- median(val[!is.na(val)])
+  data_df[i] <- val
+}
+```
+
+After that, the dataset is clean and looks like below.
+```{r after_cleaning_2}
 kable(head(data_df[1:8], 10))
 ```
 
@@ -242,7 +265,8 @@ With clean dataset, it is possible to start analyse dataset.
 First, we can check number of patients divided into genders.
 ```{r patients_gender_plot, fig.width=10}
 gender_bar_plot <- ggplot(patients_df, aes(x = gender, fill = gender)) +
-                geom_bar() + 
+                geom_bar() +
+                theme_bw() + 
                 labs(title = "Number of patients divided into gender",
                     x = "Gender",
                     y = "Number of patients",
@@ -255,6 +279,7 @@ Below the chart showing ages of patients.
 ```{r patients_age_gender_hist, fig.width=10}
 gender_age_hist <- ggplot(patients_df, aes(x = age, fill=gender)) +
                     geom_histogram(binwidth = 5.0) +
+                    theme_bw() +
                     labs(title = "Histogram of patients age and genders.",
                          x = "Age",
                          y = "Number of patients",
@@ -267,6 +292,7 @@ It is possible to create two histograms for each gender.
 ```{r patients_age_gender_hists, fig.width=10, warning=FALSE}
 gender_age_histograms <- ggplot(patients_df, aes(x = age, fill=gender)) +
                           geom_histogram(binwidth = 5.0) +
+                          theme_bw() +
                           facet_wrap(~gender) +
                           labs(title = "Histogram of patients age and genders.",
                                x = "Age",
@@ -282,6 +308,7 @@ First, histogram including each genders.
 ```{r patients_hospitalization_length, fig.width = 10}
 hosp_length_hist <- ggplot(patients_df, aes(x = hospitalization_length, fill = gender)) + 
                       geom_histogram(binwidth = 1.0) +
+                      theme_bw() +
                       scale_x_continuous(breaks=seq(0, max(patients_df$hospitalization_length), 1)) +
                       labs(title = "Number of patients and their hospitalization length",
                            x = "Hospitalization length (in days)",
@@ -297,6 +324,7 @@ Next chart will be the histogram including information about did the patient sur
 hosp_length_outcome_hist <- ggplot(patients_df, aes(x = hospitalization_length,
                                                     fill = outcome)) +
                               geom_histogram(binwidth = 1.0) +
+                              theme_bw() +
                               scale_x_continuous(breaks = seq(0, max(patients_df$hospitalization_length), 1)) +
                               labs(title = "Number of patients, their hospitalization length and outcome (survived or died)",
                                    x = "Hospitalization length (in days)",
@@ -311,7 +339,8 @@ Next, the histograms including every information above, but divided by genders a
 hosp_length_outcomes_hists <- ggplot(patients_df, aes(x = hospitalization_length,
                                                     fill = outcome)) +
                               geom_histogram(binwidth = 1.0) +
-                              facet_wrap(gender~outcome) +
+                              theme_bw() +
+                              facet_grid(gender~outcome) +
                               scale_x_continuous(breaks = seq(0, max(patients_df$hospitalization_length), 5)) +
                               scale_y_continuous(breaks = seq(0, 20, 4)) +
                               labs(title = "Number of patients, their hospitalization length and outcome (survived or died)",
@@ -322,8 +351,83 @@ hosp_length_outcomes_hists <- ggplot(patients_df, aes(x = hospitalization_length
 ggplotly(hosp_length_outcomes_hists)
 ```
 
-Next chart will show the number of patients death in next days
-```{r}
+### Animated plots
+Following charts will be animated. Next will show the number of patients death in next days
+```{r create_animated_deaths_plot, fig.width = 10}
+patients_death <- patients_df %>%
+                    select(discharge_time, outcome) %>%
+                    filter(outcome == "died") %>%
+                    mutate(discharge_time = as.integer(difftime(discharge_time,
+                                                        min(patients_df$discharge_time),
+                                                        units="days"))) %>%
+                    group_by(discharge_time) %>%
+                    summarise(num_of_deaths = n(), .groups="drop")
 
-kable(head(patients_death))
+animated_deaths_plot <- ggplot(patients_death, aes(x = discharge_time,
+                                            y = num_of_deaths)) +
+                  geom_line(color = "blue",
+                            size=1.5) +
+                  theme_bw() +
+                  labs(title = "Number of patients death in next days (from addition day)",
+                       x = "Days after addition day",
+                       y = "Number of deaths") +
+                  scale_x_continuous(breaks = seq(0, max(patients_death$discharge_time), 2)) +
+                  scale_y_continuous(breaks = seq(0, max(patients_death$num_of_deaths), 1)) +
+                  transition_reveal(discharge_time)
+
+anim_save("deaths.gif", animated_deaths_plot)
+```
+
+![](deaths.gif) 
+
+
+The chart below will show the aggregate number of deaths in next days.
+```{r create_animated_agg_deaths_plot}
+patients_death <- patients_death %>%
+                    arrange(discharge_time) %>%
+                    mutate(num_of_deaths_agg = cumsum(num_of_deaths))
+
+animated_deaths_agg_plot <- ggplot(patients_death,
+                                   aes(x = discharge_time,
+                                       y = num_of_deaths_agg)) +
+                              geom_line(color = "blue",
+                                        size = 1.5) +
+                              theme_bw() +
+                              labs(title = "Number of aggregate patients death in next days (from addition day)",
+                                   x = "Days after addition day",
+                                   y = "Number of deaths (aggregate)") +
+                              scale_x_continuous(breaks = seq(0, max(patients_death$discharge_time), 2)) +
+                              scale_y_continuous(breaks = seq(0, max(patients_death$num_of_deaths_agg), 10)) +
+                              transition_reveal(discharge_time)
+
+anim_save("deaths_agg.gif", animated_deaths_agg_plot)
+```
+![](deaths_agg.gif) 
+
+
+
+## Machine Learning
+
+```{r ml_chunk} 
+ml_df <- data_df %>%
+          select(-c("PATIENT_ID", "RE_DATE")) %>%
+          mutate(hosp_len = seconds_to_period(difftime(discharge_time,
+                                                       admission_time,
+                                                       units = "days" ))) %>%
+          relocate(hosp_len, .after = gender) %>%
+          select(-c("admission_time", "discharge_time"))
+              
+
+inTraining <- createDataPartition(y = ml_df$outcome, p=.70, list=FALSE)
+training <- ml_df[inTraining,]
+testing <- ml_df[-inTraining,]
+ctrl <- trainControl(method="repeatedcv", number = 2, repeats = 5)
+set.seed(23)
+
+
+fit <- train(outcome ~ ., data = training, method = "rf", trControl = ctrl, ntree=10)
+rfClasses <- predict(fit, newdata = testing)
+confusionMatrix(data =rfClasses, testing$outcome)
+
+
 ```
