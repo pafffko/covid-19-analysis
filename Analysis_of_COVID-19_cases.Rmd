@@ -1,12 +1,14 @@
 ---
 title: "Analysis of COVID-19 cases"
 author: "Paweł Kaciczak"
-date: "11 11 2020"
+date: "24 11 2020"
 output:
   html_document:
     code_folding: hide
     toc: yes
     toc_float: yes
+nocite: '@*'
+bibliography: my_bib.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -20,8 +22,12 @@ lubridate <- library(lubridate)
 plotly <- library(plotly)
 gtsummary <- library(gtsummary)
 gganimate <- library(gganimate)
-library(caret)
-
+caret <- library(caret)
+pROC <- library(pROC)
+ModelMetrics <- library(ModelMetrics)
+ggraph <- library(ggraph)
+igraph <- library(igraph)
+bibtex <- library(bibtex)
 ```
 
 # Introduction
@@ -40,7 +46,7 @@ To date (November 2020) there is no vaccine or effective antiviral drugs. Treatm
 The economy was significantly affected by the pandemic. Many countries have decided on implementing the so-called Lockdown - a temporary shutdown of the economy in order to avoid rallying people and infecting others. The education system also suffered - online learning was introduced in many schools and universities.
 
 ## About the document
-The following document is a coronavirus case study base on article [here article] published on May 14, 2020. The data concerns 375 patients from Wuhan region of China (Tongji Hospital). In the conducted analysis, the most discriminating biomarkers of patient mortality were identified using machine lerning tools. The problem was defined as a classification task, where the input data included blood samples and laboratory test results.
+The following document is a coronavirus cases study based on [article](https://www.nature.com/articles/s42256-020-0180-7) published on May 14, 2020. The data concerns 375 patients from Wuhan region of China (Tongji Hospital). In the conducted analysis, the most discriminating biomarkers of patient mortality were identified using machine lerning tools. The problem was defined as a classification task, where the input data included blood samples and laboratory test results.
 
 ## Used libraries
 This report is using following R libraries:
@@ -54,6 +60,12 @@ This report is using following R libraries:
   <li>`r plotly[1]`</li>
   <li>`r gtsummary[1]`</li>
   <li>`r gganimate[1]`</li>
+  <li>`r caret[1]`</li>
+  <li>`r pROC[1]`</li>
+  <li>`r ModelMetrics[1]`</li>
+  <li>`r ggraph[1]`</li>
+  <li>`r igraph[1]`</li>
+  <li>`r bibtex[1]`</li>
 </ul>
 
 ## Dataset - description
@@ -219,13 +231,23 @@ data_df <- data_df %>%
             fill(PATIENT_ID)
 ```
 
-After replace NA values in PATIENT_ID, the dataset looks like below.
+After replace NA values in PATIENT_ID column, the dataset looks like below.
 
 ```{r after_cleaning_1}
 kable(head(data_df[1:8], 10))
 ```
 
-Still, we see, there is a NA values in others column. This requires replacing these values. It is possible to do it in many ways, but here, the NA values in each column will be replace by median of the values in column.
+We know, that most patients had multiple blood samples taken throughout their stay in hospital. To prepare model of prediction the mortality of patient, next step of cleaning process is to extract only one observation to patient. The model training and testing will use only the data from final sample.
+
+```{r cleaning_process_2}
+data_df <- data_df %>%
+            group_by(PATIENT_ID) %>%
+            fill(colnames(data_df)) %>%
+            summarise(across(everything(), last), .groups="drop")
+```
+
+Still, we see, there is a NA values in some column. This requires replacing these values. It is possible to do it in many ways, but here, the NA values in each column will be replace by median of the values in column.
+
 
 ```{r median_instead_na_val, warning=FALSE}
 for(i in 8:ncol(data_df))
@@ -234,6 +256,9 @@ for(i in 8:ncol(data_df))
   val[is.na(val)] <- median(val[!is.na(val)])
   data_df[i] <- val
 }
+
+
+
 ```
 
 After that, the dataset is clean and looks like below.
@@ -244,16 +269,15 @@ kable(head(data_df[1:8], 10))
 ### Summary
 Below short summary of clean dataset.
 
-```{r summary_clean_df, warning=FALSE, error=FALSE}
-#tbl_summary(
-#  data_df,
-#  by = outcome,
-#  label = gender ~ "Gender"
-#) %>%
-#  add_n() %>%
-#  modify_header(label = "") %>%
-#  add_overall() %>%
-#  bold_labels()
+```{r summary_clean_df, warning=FALSE, error=FALSE, message = FALSE}
+tbl_summary(
+  data_df,
+  by = outcome,
+  label = gender ~ "Gender") %>%
+  add_n() %>%
+  modify_header(label = "") %>%
+  add_overall() %>%
+  bold_labels()
 ```
 
 
@@ -263,7 +287,7 @@ With clean dataset, it is possible to start analyse dataset.
 ### Plots including data about gender, age and hospitalization length
 
 First, we can check number of patients divided into genders.
-```{r patients_gender_plot, fig.width=10}
+```{r patients_gender_plot, fig.width=10, warning = FALSE, message = FALSE}
 gender_bar_plot <- ggplot(patients_df, aes(x = gender, fill = gender)) +
                 geom_bar() +
                 theme_bw() + 
@@ -271,12 +295,16 @@ gender_bar_plot <- ggplot(patients_df, aes(x = gender, fill = gender)) +
                     x = "Gender",
                     y = "Number of patients",
                 fill = "Gender")
+ggsave(filename = "gender_bar_plot.svg",
+       plot = gender_bar_plot,
+       device = "svg",
+       path = "plots")
 ggplotly(gender_bar_plot)
 ```
 
 
 Below the chart showing ages of patients.
-```{r patients_age_gender_hist, fig.width=10}
+```{r patients_age_gender_hist, fig.width=10, warning = FALSE, message = FALSE}
 gender_age_hist <- ggplot(patients_df, aes(x = age, fill=gender)) +
                     geom_histogram(binwidth = 5.0) +
                     theme_bw() +
@@ -285,11 +313,15 @@ gender_age_hist <- ggplot(patients_df, aes(x = age, fill=gender)) +
                          y = "Number of patients",
                          fill = "Gender") +
                     scale_x_continuous(breaks = seq(0, max(patients_df$age), 5))
+ggsave(filename = "gender_age_plot.svg",
+       plot = gender_age_hist,
+       device = "svg",
+       path = "plots")
 ggplotly(gender_age_hist)
 ```
 
 It is possible to create two histograms for each gender.
-```{r patients_age_gender_hists, fig.width=10, warning=FALSE}
+```{r patients_age_gender_hists, fig.width=10, warning=FALSE, message = FALSE}
 gender_age_histograms <- ggplot(patients_df, aes(x = age, fill=gender)) +
                           geom_histogram(binwidth = 5.0) +
                           theme_bw() +
@@ -299,13 +331,18 @@ gender_age_histograms <- ggplot(patients_df, aes(x = age, fill=gender)) +
                                y = "Number of patients",
                                fill = "Gender") +
                           scale_x_continuous(breaks = seq(0, max(patients_df$age), 5))
+ggsave(filename = "gender_age_histograms.svg",
+       plot = gender_age_histograms,
+       device = "svg",
+       path = "plots")
+
 ggplotly(gender_age_histograms)
 ```
 
 
 Let show the histograms about outcome due to hospitalization length.
 First, histogram including each genders.
-```{r patients_hospitalization_length, fig.width = 10}
+```{r patients_hospitalization_length, fig.width = 10, message = FALSE, warning = FALSE}
 hosp_length_hist <- ggplot(patients_df, aes(x = hospitalization_length, fill = gender)) + 
                       geom_histogram(binwidth = 1.0) +
                       theme_bw() +
@@ -314,13 +351,17 @@ hosp_length_hist <- ggplot(patients_df, aes(x = hospitalization_length, fill = g
                            x = "Hospitalization length (in days)",
                            y = "Number of patients", 
                            fill= "Gender")
+ggsave(filename = "hospitalization_length_histograms.svg",
+       plot = hosp_length_hist,
+       device = "svg",
+       path = "plots")
 
 ggplotly(hosp_length_hist)
 ```
 
 
 Next chart will be the histogram including information about did the patient survived or died.
-```{r patients_hosp_length_outcome, fig.width = 10}
+```{r patients_hosp_length_outcome, fig.width = 10, warning = FALSE, message = FALSE}
 hosp_length_outcome_hist <- ggplot(patients_df, aes(x = hospitalization_length,
                                                     fill = outcome)) +
                               geom_histogram(binwidth = 1.0) +
@@ -331,11 +372,17 @@ hosp_length_outcome_hist <- ggplot(patients_df, aes(x = hospitalization_length,
                                    y = "Number of patients",
                                    fill = "Outcome")
 
+ggsave(filename = "hospitalization_length_outcome_histogram.svg",
+       plot = hosp_length_outcome_hist,
+       device = "svg",
+       path = "plots")
+
+
 ggplotly(hosp_length_outcome_hist)
 ```
 
 Next, the histograms including every information above, but divided by genders and outcomes.
-```{r patients_hosp_length_groups, fig.width = 10}
+```{r patients_hosp_length_groups, fig.width = 10, warning = FALSE, error = FALSE}
 hosp_length_outcomes_hists <- ggplot(patients_df, aes(x = hospitalization_length,
                                                     fill = outcome)) +
                               geom_histogram(binwidth = 1.0) +
@@ -347,6 +394,11 @@ hosp_length_outcomes_hists <- ggplot(patients_df, aes(x = hospitalization_length
                                    x = "Hospitalization length (in days)",
                                    y = "Number of patients",
                                    fill = "Outcome")
+
+ggsave(filename = "hospitalization_length_outcomes_histograms.svg",
+       plot = hosp_length_outcomes_hists,
+       device = "svg",
+       path = "plots")
 
 ggplotly(hosp_length_outcomes_hists)
 ```
@@ -375,10 +427,10 @@ animated_deaths_plot <- ggplot(patients_death, aes(x = discharge_time,
                   scale_y_continuous(breaks = seq(0, max(patients_death$num_of_deaths), 1)) +
                   transition_reveal(discharge_time)
 
-anim_save("deaths.gif", animated_deaths_plot)
+anim_save("plots/deaths.gif", animated_deaths_plot)
 ```
 
-![](deaths.gif) 
+![](plots/deaths.gif) 
 
 
 The chart below will show the aggregate number of deaths in next days.
@@ -400,34 +452,885 @@ animated_deaths_agg_plot <- ggplot(patients_death,
                               scale_y_continuous(breaks = seq(0, max(patients_death$num_of_deaths_agg), 10)) +
                               transition_reveal(discharge_time)
 
-anim_save("deaths_agg.gif", animated_deaths_agg_plot)
+anim_save("plots/deaths_agg.gif", animated_deaths_agg_plot)
 ```
-![](deaths_agg.gif) 
+![](plots/deaths_agg.gif) 
 
 
 
-## Machine Learning
+## Machine Learning Model
 
-```{r ml_chunk} 
+In the following chapter, an attempt was made to create a model that will determine the probability of death from COVID-19 based on observations and results of the blood tests.
+
+It is assumed, that each row will be separate observation of unique patient.
+At the beginning you should extract right columns from dataset. The column containing id of the patients is not needed - just like the columns with dates of research and admission/discharge time (we do not know how long the patient will be hospitalizing).
+Also, we need to shuffle rows in dataframe. It is necessary, because first patient which died, is on `r which(as.vector(data_df$outcome) %in% "died") %>% first()` position in dataframe and we cannot start teaching models before both classes will occur in dataset.
+To ensure repeatability of the shuffling, the seed is seting.
+
+```{r data_extracting_and_shuffling}
 ml_df <- data_df %>%
-          select(-c("PATIENT_ID", "RE_DATE")) %>%
-          mutate(hosp_len = seconds_to_period(difftime(discharge_time,
-                                                       admission_time,
-                                                       units = "days" ))) %>%
-          relocate(hosp_len, .after = gender) %>%
-          select(-c("admission_time", "discharge_time"))
-              
+          select(-c("PATIENT_ID", "RE_DATE", "discharge_time","admission_time"))
+set.seed(17)
+rows <- sample(nrow(ml_df))
+ml_df <- ml_df[rows,]
 
+```
+
+After preparing the dataset, it is possible to split data into two datasets: 
+<ul>
+  <li> training dataset - the model will be learning on this datas </li>
+  <li> testing dataset - learned model will be tested with this datas </li>
+</ul>
+
+As the learning procces, the repeated cross-validation method was choosen. It means, that the learning procces will be done several times (argument *repeats* in the *trainControl* function). Each time, the training set will be splitting into two sets, training set and validation set.
+The training set will be used to learn model and after that, will be validate with validation set.
+
+```{r dividing_set, warning=FALSE}
 inTraining <- createDataPartition(y = ml_df$outcome, p=.70, list=FALSE)
 training <- ml_df[inTraining,]
 testing <- ml_df[-inTraining,]
-ctrl <- trainControl(method="repeatedcv", number = 2, repeats = 5)
-set.seed(23)
+
+ctrl <- trainControl(method="repeatedcv",
+                     number = 2,
+                     repeats = 5,
+                     classProbs = TRUE)
+```
 
 
-fit <- train(outcome ~ ., data = training, method = "rf", trControl = ctrl, ntree=10)
-rfClasses <- predict(fit, newdata = testing)
-confusionMatrix(data =rfClasses, testing$outcome)
+The following subchapters will checking some machine learning methods and the differences between them in accuracy, performance and errors.
+
+### k Nearest Neighbours
+
+The Nearest Neighbours classifier belongs to group of classifiers based on instance methods. The classification process is done online when a new case needs to be classified. Such methods are generally called lazy learning methods.
+The idea behind k-NN algorithm is as follows. When there is a need to classify a new object *X*, the k_NN classifier searches in the pattern space for *k* objects of the training set closest to the object *X*. Object *X*, using majority voting, is assigned to the class that dominates in the set of its *k* nearest neighbours.
+
+At the beginning, the seed is seting. It ensure the repeatability of experiments.
+```{r knn_seed}
+set.seed(17)
+```
+
+
+Then, it is possible to start learn process with k-NN method. The attribute *k* is seting on 10.
+```{r knn_training}
+tGrid <- expand.grid(k = 10)
+knn_fit <- train(outcome ~ .,
+                data = training,
+                method = "knn",
+                trControl = ctrl,
+                tuneGrid = tGrid)
+```
+
+
+After training process, the model needs to be tested. The testing set will be used to do that.
+As a result of testing the model, two types of results can be obtained:
+<ul>
+  <li> classifying samples into classes - this result is needed to create confusion matrix </li>
+  <li> probability of samples of belonging to classes - this result is needed to create ROC curve </li>
+</ul>
+In the following lines, both type of results will be obtained.
+
+```{r knn_prediction}
+knnClasses_prob <- predict(knn_fit,
+                          newdata = testing,
+                          type = "prob")
+
+knnClasses <- predict(knn_fit,
+                     newdata = testing)
+```
+
+
+With the result with classified samples, it is possible to create confusion matrix.
+The confusion matrix is the *m x m* matrix, where *m* is the number of class labels where the rows correspond to the actual class labels of the test records, and the columns to the class labels assigned to the test records by the classifier.
+The `r caret[1]` library enables the function to create confusion matrix. This function returns confusion matrix and basic performance statistics.
+```{r knn_confusionMatrix, warning=FALSE}
+knn_confMatrix <- caret::confusionMatrix(data = knnClasses, testing$outcome)
+knn_confMatrix
+```
+
+We see the basic performance statistics. The model is not perfect, but its prediction is quite good. 
+Confusion matrix analysis is one of the many ways to assess the accuracy of the model. Another one is ROC curve and area under ROC curve (AUC).
+ROC curve  is a performance measurement for classification problem at various thresholds settings. ROC is a probability curve and AUC represents degree or measure of separability. It tells how much model is capable of distinguishing between classes. Higher the AUC, better the model is at predicting survived as survived and died as died. By analogy, Higher the AUC, better the model is at distinguishing between patients with disease and no disease
+
+```{r knn_ROC, warning = FALSE, message = FALSE, fig.width = 10}
+knn_ROC <- roc(response = testing$outcome,
+           predictor = knnClasses_prob[, "died"],
+           levels = rev(levels(testing$outcome)))
+
+plot(knn_ROC,
+     print.auc = TRUE,
+     col="black",
+     lwd = 5)
+
+legend("bottomright",
+       col=c(par("fg"), "blue"),
+       legend = c("Empirical"),
+       lwd=5)
+
+```
+
+
+The AUC value is quite big. Now, its need to check if in our model occured so-called overfitting.
+Overfitting is over-matching to the specificty of the training data is most often assciotaed with the loss of generalizability.
+To check if model is or not is overfitted, the special function was created to create learning curves (similar functions was created also to others tested methods).
+
+```{r knn_learning_curves_fun, warning = FALSE}
+my_learning_curve_knn <- function(training_data,
+                              test_data,
+                              outcome = NULL,
+                              trControl = NULL)
+{
+  train_len <- nrow(training_data)
+  if(train_len < 2)
+    stop("Training data must have at least 2 data points.")
+  if(nrow(test_data) < 1)
+    stop("Test data must have at least 1 data points")
+  if(is.null(outcome))
+    stop("Please give a character string for the outcome column name.")
+  if(is.null(trControl))
+    stop("Please put the train controller.")
+  learnCurve <- data.frame(m = integer(train_len),
+                           RMSE_type = character(train_len),
+                           RMSE_value = integer(train_len))
+
+  j <- 0
+  tGrid <- expand.grid(k = 10)
+  for (i in c(seq(5,train_len, 20), train_len))
+  {
+    j <- j + 1
+    tr <- training_data[1:i,]
+    set.seed(17)
+    
+    trainModel <- train(outcome ~ .,
+                    data = tr,
+                    method = "knn",
+                    trControl = trControl,
+                    tuneGrid = tGrid)
+    
+  
+    learnCurve$m[j] <- i
+    learnCurve$RMSE_type[j] <- "Training Error"
+    learnCurve$RMSE_value[j] <- rmse(tr$outcome,
+                                    predict(trainModel,
+                                            newdata = tr))
+    j <- j + 1
+    
+    learnCurve$m[j] <- i
+    learnCurve$RMSE_type[j] <- "Testing Error"
+    learnCurve$RMSE_value[j] <- rmse(test_data$outcome,
+                                 predict(trainModel,
+                                         newdata = test_data))
+  }
+  
+  learnCurve[1:j,]
+}
+```
+
+This function generates learning curves for testing and training set of model.
+Below chart shows learning curves for training set and testing set.
+
+```{r knn_learningFunction, warning = FALSE, fig.width = 10, warning = FALSE, message = FALSE}
+knn_lmc <- my_learning_curve_knn(training_data = training,
+                  test_data = testing,
+                  outcome = "outcome",
+                  trControl = ctrl)
+
+knn_learning_curves <- ggplot(knn_lmc, aes(x = m)) +
+                          geom_line(aes(y = RMSE_value, color = RMSE_type), size=2.0) + 
+                          theme_bw() +
+                          labs(title = "Learning Curves",
+                               x = "Examples",
+                               y = "RMSE value",
+                               color = "Learning Curve")
+ggsave(filename = "k_nn_learning_curves.svg",
+       plot = knn_learning_curves,
+       device = "svg",
+       path = "plots")
+
+ggplotly(knn_learning_curves)
 
 
 ```
+On the graph we see the learning curves. On the *X* axis there is the number of examples that was included into training process. On the *Y* axis there is the value of root mean square error.
+The chart with learning curves shows us, that error on training set is similar to error on testing set. It is not too big, so we can assume that model is not overfitted.
+
+### SVM 
+*SVM* is classification method whose learning aim is to determine the separating hyperplane with a maximum margin of examples belonging to two classes.
+
+At the beginning, the seed is seting. It ensure the repeatability of experiments.
+```{r svm_seed}
+set.seed(17)
+```
+
+
+Then, it is possible to start learn process with *SVM* method. We choose the *svmRadial* method - the kernel used in training and predicting is based on radial basis.
+```{r svm, warning=FALSE}
+svm_fit <- train(outcome ~ .,
+              data = training,
+              method = "svmRadial",
+              trControl = ctrl)
+```
+
+Like in the k-NN method, the prediction with samples classified and probability will be created.
+
+```{r svm_perdiction}
+svmClasses <- predict(svm_fit,
+                      newdata = testing)
+svmClasses_prob <- predict(svm_fit,
+                           newdata = testing,
+                           type = "prob")
+```
+
+
+Below the confusion matrix for the model with *SVM* method.
+
+```{r svm_confMatrix}
+
+svm_confMatrix <-caret::confusionMatrix(testing$outcome,
+                                        svmClasses)
+svm_confMatrix
+```
+
+The model made fewer errors than the *k-NN* model
+Below the ROC curve for model with *SVM*.
+```{r svm_ROC, warning = FALSE, message = FALSE, fig.width = 10}
+svm_ROC <- roc(response = testing$outcome,
+               predictor = svmClasses_prob[, "died"],
+               levels = rev(levels(testing$outcome)))
+
+plot(svm_ROC,
+     print.auc = TRUE,
+     col="black",
+     lwd = 5)
+
+legend("bottomright",
+       col=c(par("fg"), "blue"),
+       legend = c("Empirical"),
+       lwd = 5)
+```
+*AUC* is big, like in the *k-NN* model.
+Below the function for creating learning curves for *SVM* method.
+
+```{r svm_learning_curve, warning=FALSE}
+my_learning_curve_svm <- function(training_data,
+                              test_data,
+                              outcome = NULL,
+                              trControl = NULL)
+{
+  train_len <- nrow(training_data)
+  if(train_len < 2)
+    stop("Training data must have at least 2 data points.")
+  if(nrow(test_data) < 1)
+    stop("Test data must have at least 1 data points")
+  if(is.null(outcome))
+    stop("Please give a character string for the outcome column name.")
+  if(is.null(trControl))
+    stop("Please put the train controller.")
+  learnCurve <- data.frame(m = integer(train_len),
+                           RMSE_type = character(train_len),
+                           RMSE_value = integer(train_len))
+
+  j <- 0
+  tGrid <- expand.grid(k = 10)
+  for (i in c(seq(20,train_len, 20), train_len))
+  {
+    j <- j + 1
+    tr <- training_data[1:i,]
+    set.seed(17)
+    
+    trainModel <- train(outcome ~ .,
+                    data = tr,
+                    method = "svmRadial",
+                    trControl = ctrl)
+    
+  
+    learnCurve$m[j] <- i
+    learnCurve$RMSE_type[j] <- "Training Error"
+    learnCurve$RMSE_value[j] <- rmse(tr$outcome,
+                                    predict(trainModel,
+                                            newdata = tr))
+    j <- j + 1
+    
+    learnCurve$m[j] <- i
+    learnCurve$RMSE_type[j] <- "Testing Error"
+    learnCurve$RMSE_value[j] <- rmse(test_data$outcome,
+                                 predict(trainModel,
+                                         newdata = test_data))
+  }
+  
+  learnCurve[1:j,]
+}
+```
+
+This function generates learning curves for testing and training set for model with *SVM* method.
+Below chart shows learning curves for training set and testing set.
+
+```{r svm_learning_curves, warning=FALSE, fig.width = 10, warning = FALSE, message = FALSE}
+svm_lmc <- my_learning_curve_svm(training_data = training,
+                                 test_data = testing,
+                                 outcome = "outcome",
+                                 trControl = ctrl)
+
+svm_learning_curves <- ggplot(svm_lmc, aes(x = m)) +
+                        geom_line(aes(y = RMSE_value, color = RMSE_type), size=2.0) + 
+                        theme_bw() +
+                        labs(title = "Learning Curves",
+                             x = "Examples",
+                             y = "RMSE value",
+                             color = "Learning Curve")
+
+ggsave(filename = "svm_learning_curves.svg",
+       plot = svm_learning_curves,
+       device = "svg",
+       path = "plots")
+
+ggplotly(svm_learning_curves)
+
+
+```
+The error for training set is lower that error for testing set. We see, that value of both errors are lower that errors in *k-NN* method. So, that means, the *SVM* model is better than *k-NN*.
+
+### Random Forests
+
+Random Forests belong to the category of methods of constructing complex classifiers using the idea of modifying the set of attributes of the training data set. The Random Forest method uses only decision trees as base classifiers.
+
+At the beginning, the seed is seting. It ensure the repeatability of experiments.
+```{r seting_seed, warning=FALSE, error=FALSE,}
+set.seed(17)
+```
+
+Then, it is possible to start learn process with Random Forests method. The number of trees in forest is set on 10.
+
+```{r train_process}
+rf_fit <- train(outcome ~ .,
+                data = training,
+                method = "rf",
+                trControl = ctrl,
+                ntree=10)
+```
+
+
+As previously, the prediction with samples classified and probability will be created.
+```{r rf_predictions}
+rfClasses_prob <- predict(rf_fit,
+                          newdata = testing,
+                          type = "prob")
+
+rfClasses <- predict(rf_fit,
+                     newdata = testing)
+```
+importance_vector <- as.vector(rf_fit$finalModel$importance)
+Below the confusion matrix for the model with *Random Forests* method.
+```{r rf_confustion matrix}
+rf_confMatrix <- caret::confusionMatrix(data = rfClasses, testing$outcome)
+rf_confMatrix
+```
+
+This model made the fewest mistakes of all the previous ones. 
+Below the ROC curve for model with *Random Forests*
+
+```{r rf_ROC, warning=FALSE, error=FALSE, message=FALSE, fig.width = 10}
+rf_ROC <- roc(response = testing$outcome,
+           predictor = rfClasses_prob[, "died"],
+           levels = rev(levels(testing$outcome)))
+
+plot(rf_ROC,
+     print.auc = TRUE,
+     col="black",
+     lwd = 5)
+
+legend("bottomright",
+       col=c(par("fg"), "blue"),
+       legend = c("Empirical"),
+       lwd = 5)
+```
+AUC is, similar like in the previous models, big.
+Below the function for creating learning curves.
+```{r learning_curfe_rf_fun}
+my_learning_curve_rf <- function(training_data,
+                              test_data,
+                              outcome = NULL,
+                              trControl = NULL)
+{
+  train_len <- nrow(training_data)
+  if(train_len < 2)
+    stop("Training data must have at least 2 data points.")
+  if(nrow(test_data) < 1)
+    stop("Test data must have at least 1 data points")
+  if(is.null(outcome))
+    stop("Please give a character string for the outcome column name.")
+  if(is.null(trControl))
+    stop("Please put the train controller.")
+  learnCurve <- data.frame(m = integer(train_len),
+                           RMSE_type = character(train_len),
+                           RMSE_value = integer(train_len))
+  tGrid
+  j <- 0
+  for (i in c(seq(5,train_len, 20), train_len))
+  {
+    j <- j + 1
+    tr <- training_data[1:i,]
+    set.seed(17)
+    
+    trainModel <- train(outcome ~ .,
+                    data = tr,
+                    method = "rf",
+                    trControl = trControl,
+                    ntree=10)
+    
+  
+    learnCurve$m[j] <- i
+    learnCurve$RMSE_type[j] <- "Training Error"
+    learnCurve$RMSE_value[j] <- rmse(tr$outcome,
+                                    predict(trainModel,
+                                            newdata = tr))
+    j <- j + 1
+    
+    learnCurve$m[j] <- i
+    learnCurve$RMSE_type[j] <- "Testing Error"
+    learnCurve$RMSE_value[j] <- rmse(test_data$outcome,
+                                 predict(trainModel,
+                                         newdata = test_data))
+  }
+  
+  learnCurve[1:j,]
+}
+```
+
+This function generates learning curves for testing and training set for model with *Random Forests* method.
+Belows chart shows learning curves for training set and testing set.
+
+```{r generate_rf_learning_curves, fig.width = 10, warning = FALSE, message = FALSE}
+rf_mlc <- my_learning_curve_rf(training_data = training,
+                               test_data = testing,
+                               outcome = "outcome",
+                               trControl = ctrl)
+
+rf_learning_curves <- ggplot(rf_mlc, aes(x = m)) +
+                        geom_line(aes(y = RMSE_value, color = RMSE_type), size=2.0) + 
+                        theme_bw() +
+                        labs(title = "Learning Curves",
+                             x = "Examples",
+                             y = "RMSE value",
+                             color = "Learning Curve")
+
+ggsave(filename = "rf_learning_curves.svg",
+       plot = rf_learning_curves,
+       device = "svg",
+       path = "plots")
+
+ggplotly(rf_learning_curves)
+```
+
+The error during the training process is less than the error during the testing process and the values of both errors is quite low.
+
+### Comparison
+
+We created 3 models of prediction based on 3 different methods of learning. Below the comparison of them.
+
+First, we can compare the confusion matrix of each model.
+Below the confusion matrix for *k-NN* method.
+```{r comp_knn_confMatrix}
+knn_confMatrix
+```
+Below the confusion matrix fot *SVM* method.
+```{r comp_svm_confMatrix}
+svm_confMatrix
+```
+Below the confusion matrix for *Random Forests* method.
+```{r comp_rf_confMatrix}
+rf_confMatrix
+```
+
+We see, the best confusion matrix is the best for method with *Random Forests*. That model made the fewest number of mistakes.
+
+Let's check the ROC curves. Below the charts with the ROC curves.
+```{r comp_ROC_curves, fig.width = 10}
+
+plot(knn_ROC,
+     col="red",
+     lwd = 5)
+plot(svm_ROC,
+     col = "green",
+     add = TRUE,
+     lwd = 5)
+plot(rf_ROC,
+     col = "blue",
+     add = TRUE,
+     lwd = 5)
+legend("bottomright",
+       col=c("red", "green", "blue"),
+       legend = c("k-NN", "SVM", "Random Forests"),
+       lwd = 5)
+
+```
+
+On the chart above we see, that the ROC curve is the most *convex* for the *Random Forests* method.
+
+Let's compare the learning curves.
+First, we need to prepare datasets with results of learning.
+```{r comp_prepare_learning_curves}
+knn_train_lmc <- knn_lmc %>%
+                  filter(RMSE_type == "Training Error") %>%
+                  mutate(method = "k-NN")
+knn_test_lmc <- knn_lmc %>%
+                  filter(RMSE_type == "Testing Error") %>%
+                  mutate(method = "k-NN")
+
+svm_train_lmc <- svm_lmc %>%
+                  filter(RMSE_type == "Training Error") %>%
+                  mutate(method = "SVM")
+svm_test_lmc <- svm_lmc %>%
+                  filter(RMSE_type == "Testing Error") %>%
+                  mutate(method = "SVM")
+
+rf_train_lmc <- rf_mlc %>%
+                  filter(RMSE_type == "Training Error") %>%
+                  mutate(method = "Random Forests")
+rf_test_lmc <- rf_mlc %>%
+                  filter(RMSE_type == "Testing Error") %>%
+                  mutate(method = "Random Forests")
+
+training_curves <- rbind(knn_train_lmc, svm_train_lmc, rf_train_lmc)
+
+
+testing_curves <- rbind(knn_test_lmc, svm_test_lmc, rf_test_lmc)
+```
+
+After that, it is possible to create plots and compare then. First, we can compare the learning curves for the training set.
+```{r comp_training_learning_curve, fig.width = 10, warning = FALSE, message = FALSE}
+comp_training_curves <- ggplot(training_curves, aes(x = m)) +
+                          geom_line(aes(y = RMSE_value, color = method), size=2.0) + 
+                          theme_bw() +
+                          labs(title = "Learning Curves for training",
+                               x = "Examples",
+                               y = "RMSE value",
+                               color = "Method of learning")
+
+ggsave(filename = "comparison_training_curves.svg",
+       plot = comp_training_curves,
+       device = "svg",
+       path = "plots")
+
+ggplotly(comp_training_curves)
+```
+
+We see, that the least training error is made by the model which learning method for *Random Forests*.
+Below the comparison of learning curves during the testing process.
+
+```{r comp_testing_learning_curve, fig.width = 10, warning = FALSE, message = FALSE}
+comp_testing_curves <- ggplot(testing_curves, aes(x = m)) +
+                        geom_line(aes(y = RMSE_value, color = method), size=2.0) + 
+                        theme_bw() +
+                        labs(title = "Learning Curves for testing",
+                             x = "Examples",
+                             y = "RMSE value",
+                             color = "Method of learning")
+
+ggsave(filename = "comparison_testing_curves.svg",
+       plot = comp_testing_curves,
+       device = "svg",
+       path = "plots")
+
+ggplotly(comp_testing_curves)
+
+```
+
+As it was previously, the best score of error is in the model, which learning method was *Random Forests*.
+We can assume, that the best model of prediction is the model which learning method is *Random Forests*.
+In the following chapter, there will be attempt to improve the model by tuning.
+
+
+### Tuning best model
+
+To improve our model, we can reduce the number of attributes used in training the model. Let check what attributes are the most important in our best model.
+The importance of an attribute can be judged on the basis of the mean decrease gini index.
+Below the table with the attributes sorted by importance for the best model.
+
+```{r extract_most_important_attributes_rf}
+attributes <- colnames(select(ml_df, -"outcome"))
+importance_vector <- as.vector(rf_fit$finalModel$importance)
+
+importance_df <- data.frame(matrix(c(attributes, importance_vector), ncol = 2))
+colnames(importance_df) <- c("Attribute", "Importance")
+importance_df <- importance_df %>%
+                  arrange(desc(as.numeric(Importance)))
+kable(importance_df)
+```
+
+An attempt was made to limit the number of attributes to which importance is higher than 0.
+The most important attributes have been selected from the list above.
+
+
+```{r tuning_model_spliting, warning = FALSE}
+most_important_attr_rf <- importance_df %>%
+                            filter(Importance > 0)
+
+most_important_attr_rf <- most_important_attr_rf[1:ceiling(nrow(most_important_attr_rf)),1]
+
+new_training <- training %>%
+              select(c("outcome", all_of(most_important_attr_rf)))
+
+new_testing <- testing %>%
+            select(c("outcome", all_of(most_important_attr_rf)))
+```
+Below same process of training model like above.
+
+First, the seed must be set.
+```{r improving_model_seed, warning=FALSE, message=FALSE}
+set.seed(17)
+```
+
+Now, the training process with new training data.
+```{r tuning_model_fit, warning = FALSE}
+new_rf_fit <- train(outcome ~ .,
+                data = new_training,
+                method = "rf",
+                trControl = ctrl,
+                ntree=10)
+```
+
+
+With the tuned model, we can predict classes. As previously, both types of prediction will be generated.
+```{r tuning_model_prediction, warning = FALSE}
+new_rfClasses_prob <- predict(new_rf_fit,
+                          newdata = new_testing,
+                          type = "prob")
+
+new_rfClasses <- predict(new_rf_fit,
+                     newdata = new_testing)
+```
+
+Below the confusion matrix for tuned model.
+```{r tuning_model_confMatrix, warning = FALSE}
+new_rf_confMatrix <- caret::confusionMatrix(data = new_rfClasses, new_testing$outcome)
+new_rf_confMatrix
+```
+
+For now, we see, the tuned model made more mistakes that original model, but did not make mistakes the so-called *False Positive*, which should be important to us in terms of prediction - the person who survives is qualified as the on who will die. This type of error is more desirable if we can choose between it and a *False Negative* error, which will qualify the person who dies as a survivor.
+
+Below the ROC curve for tuned model.
+
+```{r tuning_model_roc, warning = FALSE, message = FALSE, fig.width = 10}
+new_rf_ROC <- roc(response = new_testing$outcome,
+           predictor = new_rfClasses_prob[, "died"],
+           levels = rev(levels(new_testing$outcome)))
+
+plot(new_rf_ROC,
+     print.auc = TRUE,
+     col="black",
+     lwd = 5)
+
+legend("bottomright",
+       col=c(par("fg"), "blue"),
+       legend = c("Empirical"),
+       lwd = 5)
+```
+The area under curve (*AUC*) is bigger than in the original model. That means, the tuned model is more efficient than original.
+
+Let check the learning curve for tuned model. The original function created for *Random Forests* will be used.
+
+```{r tuning_model_learning_curves, warning = FALSE, fig.width = 10, message = FALSE}
+new_rf_mlc <- my_learning_curve_rf(training_data = new_training,
+                                   test_data = new_testing,
+                                   outcome = "outcome",
+                                   trControl = ctrl)
+
+tuned_model_learning_curves_1 <- ggplot(new_rf_mlc, aes(x = m)) +
+                                  geom_line(aes(y = RMSE_value, color = RMSE_type), size=2.0) + 
+                                  theme_bw() +
+                                  labs(title = "Learning Curves",
+                                       x = "Examples",
+                                       y = "RMSE value",
+                                       color = "Learning Curve")
+
+ggsave(filename = "tuned_model_learning_curves_1.svg",
+       plot = tuned_model_learning_curves_1,
+       device = "svg",
+       path = "plots")
+
+ggplotly(tuned_model_learning_curves_1)
+
+
+
+```
+The chart above, with the learning curves does not differ much from the original. The testing error is on the same level, only the training error incresed, but acceptable.
+Let's check if it is possible to tune model more that now. The whole process must be repeated.
+
+First, the extraction of most important attributes.
+```{r tuning_model_extract_attr}
+tuned_attr <- colnames(select(new_training, -"outcome"))
+importance_vector2 <- as.vector(new_rf_fit$finalModel$importance)
+importance_df2 <- data.frame(matrix(c(tuned_attr, importance_vector2), ncol = 2))
+colnames(importance_df2) <- c("Attribute", "Importance")
+importance_df2 <- importance_df2 %>%
+                    arrange(desc(as.numeric(Importance)))
+kable(importance_df2)
+```
+
+Let's try to train model attributes, which their importnace is higher than 5. There is only `r nrow(importance_df2 %>% filter(as.numeric(Importance) > 5))` these attributes.
+```{r tuning_model_extract_attr2}
+most_important_attr_rf2 <- importance_df2 %>%
+                              filter(as.numeric(Importance) > 5) %>%
+                              select(Attribute)
+kable(most_important_attr_rf2)
+```
+
+Now you should build a test ad training set based on the received attributes.
+
+```{r tuned_sets}
+most_important_attr_rf2 <- most_important_attr_rf2$Attribute
+
+new_training2 <- training %>%
+              select(c("outcome", all_of(most_important_attr_rf2)))
+
+new_testing2 <- testing %>%
+            select(c("outcome", all_of(most_important_attr_rf2)))
+```
+
+Then, the model can be trained.
+
+```{r tuned2_learning}
+set.seed(17)
+new_rf_fit2 <- train(outcome ~ .,
+             data = new_training2,
+             method = "rf",
+             trControl = ctrl,
+             ntree = 10)
+```
+
+With trained model, it is possible to predict the results.
+
+```{r tuned2_prediction}
+new_rfClasses2 <- predict(new_rf_fit2,
+                          newdata = new_testing2)
+
+new_rfClasses2_prob <- predict(new_rf_fit2,
+                               newdata = new_testing2,
+                               type = "prob")
+
+```
+
+Below the confusion matrix to tuned model.
+
+```{r conf_matrixes_2}
+new_rf_confMatrix2 <- caret::confusionMatrix(data = new_rfClasses2,
+                                             new_testing2$outcome)
+new_rf_confMatrix2
+```
+
+We see, that there is no differences between this model and original tuned model. 
+Let's check the ROC curve and AUC value.
+
+```{r tuned_ROC2, message = FALSE, warning = FALSE, fig.width = 10}
+new_rf_ROC2 <- roc(response = new_testing2$outcome,
+                   predictor = new_rfClasses2_prob[, "died"],
+                   levels = rev(levels(new_testing2$outcome)))
+
+plot(new_rf_ROC2,
+     print.auc = TRUE,
+     col="black",
+     lwd = 5)
+legend("bottomright",
+       col=c(par("fg"), "blue"),
+       legend = c("Empirical"),
+       lwd = 5)
+
+```
+The graph above tells us, that this model is not as good as like the previous one. But, we limited number of attributes from `r nrow(most_important_attr_rf)` to `r length(most_important_attr_rf2)` attributes. It means, that we do not need to  know the values of `r nrow(most_important_attr_rf)` attributes, we need only `r length(most_important_attr_rf2)` attributes to predict the result with the same accuracy.
+Below the chart with learning curves of new tuned model.
+
+```{r tuned2_learning_curves, fig.width = 10, warninge = FALSE, message = FALSE}
+new_rf_mlc2 <- my_learning_curve_rf(training_data = new_training2,
+                                   test_data = new_training2,
+                                   outcome = "outcome",
+                                   trControl = ctrl)
+
+tuned_model_learning_curves_2 <- ggplot(new_rf_mlc2, aes(x = m)) +
+                                  geom_line(aes(y = RMSE_value, color = RMSE_type), size=2.0) + 
+                                  theme_bw() +
+                                  labs(title = "Learning Curves",
+                                       x = "Examples",
+                                       y = "RMSE value",
+                                       color = "Learning Curve")
+
+ggsave(filename = "tuned_model_learning_curves_2.svg",
+       plot = tuned_model_learning_curves_2,
+       device = "svg",
+       path = "plots")
+
+ggplotly(tuned_model_learning_curves_2)
+
+```
+
+The chart above shows us, that the training and testing error is on the same level. But both value decreased. So, it means, that next iteration of tuning gave us better model.
+
+# Summary
+In the document we can find the analysis of the COVID-19 cases. After the short introduction, there is a part with graphical presentation of data that were used in report. After the graphic part, there was an attempt to create machine learning model of prediction the mortality of the patients. This model can be used e.g. in hospitals to judge, whose patient need to be hospitalized immediately. We extracted `r length(most_important_attr_rf2)` attributes that are need to predict, with high efficiency, the mortality of patient. Below is the table with these attributes:
+
+```{r most_important_attributes}
+results <- data.frame(most_important_attr_rf2)
+colnames(results) <- "Most important attributes"
+kable(results)
+```
+These biological factor are significant to predict the cases of COVID by doctors. Some medical articles reach similar conclusions about test results, e.g. [Hematologic, biochemical and immune biomarker abnormalities associated with severe illness and mortality in coronavirus disease 2019 (COVID-19): a meta-analysis](https://pubmed.ncbi.nlm.nih.gov/32286245/), [Clinical characteristics of coronavirus disease 2019 (COVID-19) in China: A systematic review and meta-analysis](https://pubmed.ncbi.nlm.nih.gov/32283155/) or [Thrombocytopenia is associated with severe coronavirus disease 2019 (COVID-19) infections: A meta-analysis](https://pubmed.ncbi.nlm.nih.gov/32178975/).
+
+```{r tree_fun}
+tree_func <- function(final_model, 
+                      tree_num) {
+  #source: https://shiring.github.io/machine_learning/2017/03/16/rf_plot_ggraph
+  # get tree by index
+  tree <- randomForest::getTree(final_model, 
+                                k = tree_num, 
+                                labelVar = TRUE) %>%
+    tibble::rownames_to_column() %>%
+    # make leaf split points to NA, so the 0s won't get plotted
+    mutate(`split point` = ifelse(is.na(prediction), `split point`, NA))
+  
+  # prepare data frame for graph
+  graph_frame <- data.frame(from = rep(tree$rowname, 2),
+                            to = c(tree$`left daughter`, tree$`right daughter`))
+  
+  # convert to graph and delete the last node that we don't want to plot
+  graph <- graph_from_data_frame(graph_frame) %>%
+    delete_vertices("0")
+  
+  # set node labels
+  V(graph)$node_label <- gsub("_", " ", as.character(tree$`split var`))
+  V(graph)$leaf_label <- as.character(tree$prediction)
+  V(graph)$split <- as.character(round(tree$`split point`, digits = 2))
+  
+  # plot
+  plot <- ggraph(graph, 'dendrogram') + 
+    theme_bw() +
+    geom_edge_link() +
+    geom_node_point() +
+    geom_node_text(aes(label = node_label), na.rm = TRUE, repel = TRUE) +
+    geom_node_label(aes(label = split), vjust = 2.5, na.rm = TRUE, fill = "white") +
+    geom_node_label(aes(label = leaf_label, fill = leaf_label), na.rm = TRUE, 
+					repel = TRUE, colour = "white", fontface = "bold", show.legend = FALSE) +
+    theme(panel.grid.minor = element_blank(),
+          panel.grid.major = element_blank(),
+          panel.background = element_blank(),
+          plot.background = element_rect(fill = "white"),
+          panel.border = element_blank(),
+          axis.line = element_blank(),
+          axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          plot.title = element_text(size = 18))
+  
+  print(plot)
+}
+```
+
+Below example of the tree from forests.
+```{r tree, warning = FALSE}
+tree <- tree_func(final_model = new_rf_fit2$finalModel,
+                  tree_num = 5)
+```
+
+The conclusions are as follows. The model of prediction could be use to assess the state of health the patients. The model sufficiently reflects reality, but it only considers blood results. Patient symptoms and other data such as age, gender, comorbidities are not into account. First of all, the model should play a supporting role in diagnosing the course of the disease - it should not, prejudge the treatment of the patient. It should be remembered that each case is different and an individual course of treatment should be selected for each case.
+
+# Bibliography
