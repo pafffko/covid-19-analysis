@@ -16,3 +16,8 @@ gtsummary
 gganimate
 lattice
 caret
+pROC
+ModelMetrics
+ggraph
+igraph
+bibtex
