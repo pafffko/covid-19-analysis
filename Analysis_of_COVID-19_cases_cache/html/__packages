@@ -9,3 +9,10 @@ dplyr
 ggplot2
 readxl
 knitr
+tidyr
+lubridate
+plotly
+gtsummary
+gganimate
+lattice
+caret
