@@ -46,7 +46,7 @@ To date (November 2020) there is no vaccine or effective antiviral drugs. Treatm
 The economy was significantly affected by the pandemic. Many countries have decided on implementing the so-called Lockdown - a temporary shutdown of the economy in order to avoid rallying people and infecting others. The education system also suffered - online learning was introduced in many schools and universities.
 
 ## About the document
-The following document is a coronavirus cases study based on [article](https://www.nature.com/articles/s42256-020-0180-7) published on May 14, 2020. The data concerns 375 patients from Wuhan region of China (Tongji Hospital). In the conducted analysis, the most discriminating biomarkers of patient mortality were identified using machine lerning tools. The problem was defined as a classification task, where the input data included blood samples and laboratory test results.
+The following document is a coronavirus cases study based on this [article](https://www.nature.com/articles/s42256-020-0180-7) published on May 14, 2020. The data concerns 375 patients in China (Tongji Hospital). In the conducted analysis, the most discriminating biomarkers of patient mortality were identified using machine learning tools. The problem was defined as a classification task, where the input data included blood samples and laboratory test results.
 
 ## Used libraries
 This report is using following R libraries:
@@ -69,7 +69,7 @@ This report is using following R libraries:
 </ul>
 
 ## Dataset - description
-Data is import from flat file.
+The data set is import from flat file.
 
 ```{r load_datas, cache=TRUE}
 cov_cs_df <- read_excel("data\\wuhan_blood_sample_data_Jan_Feb_2020.xlsx")
@@ -81,30 +81,30 @@ Dataset has `r nrow(cov_cs_df)` rows and `r ncol(cov_cs_df)` columns. It is too 
 kable(head(cov_cs_df[1:10], 5))
 ```
 
-We see, that first 7 columns are describing patients, the others are about the result of the research of their blood. Below the meaning of each column:
+As you can see, first 7 columns present the information on patients, while the others describe their blood tests' ressults. Below, you will find brief explanation for each column.
 <ol>
-  <li> <b> PATIENT_ID </b> - identifier of patient in dataset; in dataset is `r max(cov_cs_df$PATIENT_ID, na.rm=TRUE)` unique patients </li>
-  <li> <b> RE_DATE </b> - date of research; first research was made `r min(cov_cs_df$RE_DATE, na.rm=TRUE)` and the last was made `r max(cov_cs_df$RE_DATE, na.rm=TRUE)`</li>
-  <li> <b> age </b> - age of patient; the youngest patient was `r min(cov_cs_df$age, na.rm=TRUE)` years old and the oldest was `r max(cov_cs_df$age, na.rm=TRUE)` years old</li>
+  <li> <b> PATIENT_ID </b> - identifier of patient in dataset; in dataset are `r max(cov_cs_df$PATIENT_ID, na.rm=TRUE)` unique patients </li>
+  <li> <b> RE_DATE </b> - date of research; first research was made on the `r min(cov_cs_df$RE_DATE, na.rm=TRUE)` and the last was made `r max(cov_cs_df$RE_DATE, na.rm=TRUE)`</li>
+  <li> <b> age </b> - age of patient; the youngest patient was `r min(cov_cs_df$age, na.rm=TRUE)` and the oldest one was `r max(cov_cs_df$age, na.rm=TRUE)` </li>
   <li> <b> gender </b> - sex of the patients </li>
-  <li> <b> Admission time </b> - date of the admission patient; first patient was admit `r min(cov_cs_df$"Admission time", na.rm=TRUE)` and the last was `r max(cov_cs_df$"Admission time", na.rm=TRUE)` </li>
-  <li> <b> Discharge time </b> - date of the discharge patient; first patient was discharge `r min(cov_cs_df$"Discharge time", na.rm=TRUE)` and the last was `r min(cov_cs_df$"Discharge time", na.rm=TRUE)`</li>
-  <li> <b> outcome </b> - did the patient survived or died</li>
-  <li> <b> Hypersensitive cardiac troponin I </b> - cardiac troponins are the proteins that are part of the heart muscle cells; in the healthy person their concentration is close to zero but it rises after hearth attack </li>
-  <li> <b> hemoglobin </b> - it is responsible for the red color of blood and its primary fucntion is to transport oxygen; Hemoglobin norms in adults:
+  <li> <b> Admission time </b> - date of the patient admission; the first patient was admitted on `r min(cov_cs_df$"Admission time", na.rm=TRUE)` and the last was `r max(cov_cs_df$"Admission time", na.rm=TRUE)` </li>
+  <li> <b> Discharge time </b> - date of the dischargepatient; the first patient was discharged on the `r min(cov_cs_df$"Discharge time", na.rm=TRUE)` and the last was `r min(cov_cs_df$"Discharge time", na.rm=TRUE)`</li>
+  <li> <b> outcome </b> - whether the patient survived or died</li>
+  <li> <b> Hypersensitive cardiac troponin I </b> - cardiac troponins are the proteins that are part of the heart muscle cells; in normal condition their concentration is close to zero but it rises after a hearth attack </li>
+  <li> <b> hemoglobin </b> - it is responsible for the red color of blood and its primary fucntion is to transport the oxygen; Hemoglobin for adults are:
     <ul>
       <li> women - 12,0 - 16,0 g/dl (7,2 - 10,0 mmol/l) </li>
       <li> men - 14,0- 18,0 g/dl (7,8 - 11,3 mmol/l) </li>
       <li> pregnant women - 11 – 14 g/dl (6,9–8,8 mmol/l) </li>
     </ul>
   </li>
-  <li> <b> Serum chloride </b> - Chlorine is the major anion of the extracellular factor, inlcuding blood plasma; The proper concentration of chlorides in the blood ensures the proper functioning of the neuromuscular and digestive systems; normal concentraion of chloride in the blood: 95–105 mmol/l. The concentration in women is on average slightly higher (by 2–2.5 mmol/l) in women than in men  </li>
+  <li> <b> Serum chloride </b> - Chlorine is the major anion of the extracellular factor, including blood plasma; The proper concentration of chlorides in blood ensures the proper functioning of the neuromuscular and digestive systems; normal concentraion of chloride in blood: 95–105 mmol/l. For women, the average concentration is slighty higher (around 2–2.5 mmol/l) forwomen than for men  </li>
   <li> <b> Prothrombin time </b> - it is a parameter describing efficiency of the extrinsic coagulation system; normal result is 12 - 16 seconds </li>
-  <li> <b> procalcitonin </b> - PCT is a substance whose presence in the blood indicates a bacterial infection. Testing procalcitonin levels allows early diagnosis of infection, even when no symptoms are present yet; in the healthy person the condensation is low (<0.1 ng/mL) but when it is > 0.5 ng/mL it is characteristic for bacterial infection </li>
-  <li> <b> eosinophils(%) </b> - it is a type of white blood cell, also known as leukocytes; their main task is to participate in the immune response of our body;  the correct percentage of eosinophils as a component of leukocytes, depending on the adopted standards, ranges from 1-5%</li>
+  <li> <b> procalcitonin </b> - PCT is a substance whose presence in the blood indicates a bacterial infection. Testing procalcitonin levels allows early diagnosis of an infection, even when there aren't any symptomps yet; for a healthy individual the condensation is low (<0.1 ng/mL) but when it is > 0.5 ng/mL it indicates bacterial infection </li>
+  <li> <b> eosinophils(%) </b> - it is a type of white blood cell, also known as leukocytes; their main task is to participate in the immune response of our body;  the appropriate percentage of eosinophils as a component of leukocytes, depending on the adopted standards, ranges from 1-5%</li>
   <li> <b> Interleukin 2 receptor </b> - it is cytokine (protein) that incluences, among other things, the activity of lymphocytes.</li>
   <li> <b> Alkaline phosphatase </b> - known as ALP, is an enzyme that occurs in many cells of the human body; depending on the place of occurrence reaches different concentrations; the norms are established based on the age of patient  </li>
-  <li> <b> albumin </b> - is the main serum protein procued in the liver; their main role in the human body is to transport hormones(e.g. cortisol) drugs (e.g. antibiotics) as well as vitamins, fatty acids and lipids; the norms depends e.g. age of patient, gender, determination method; approximate norms for particular periods of life:
+  <li> <b> albumin </b> - is the main serum protein procued in the liver; their main role in a human body is to transport hormones(e.g. cortisol) drugs (e.g. antibiotics) as well as vitamins, fatty acids and lipids; the norms depend on e.g. the age of patient, gender, determination method; approximate norms for particular periods of life:
     <ul>
       <li> children (not preterm): 4.6-7.4 g/dl </li>
       <li> 7-19 years: 3.7-5.6 g/dl </li>
@@ -237,7 +237,7 @@ After replace NA values in PATIENT_ID column, the dataset looks like below.
 kable(head(data_df[1:8], 10))
 ```
 
-We know, that most patients had multiple blood samples taken throughout their stay in hospital. To prepare model of prediction the mortality of patient, next step of cleaning process is to extract only one observation to patient. The model training and testing will use only the data from final sample.
+We know, that most of the patients had multiple blood samples taken throughout their stay in a hospital. To prepare the model of prediction the mortality of patients, the next step of a cleaning process is to extract only one observation to patient. Only the final sample data will be used for the model training and the testing.
 
 ```{r cleaning_process_2}
 data_df <- data_df %>%
@@ -246,7 +246,7 @@ data_df <- data_df %>%
             summarise(across(everything(), last), .groups="drop")
 ```
 
-Still, we see, there is a NA values in some column. This requires replacing these values. It is possible to do it in many ways, but here, the NA values in each column will be replace by median of the values in column.
+Again, you can see, there is a NA values in some column. That requires replacing those values. It is possible to do it in many ways, but here, the NA values in each column will be replace by median of the values in each column.
 
 
 ```{r median_instead_na_val, warning=FALSE}
@@ -460,11 +460,11 @@ anim_save("plots/deaths_agg.gif", animated_deaths_agg_plot)
 
 ## Machine Learning Model
 
-In the following chapter, an attempt was made to create a model that will determine the probability of death from COVID-19 based on observations and results of the blood tests.
+In the following chapter, an attempt was made to create a model that will determine the probability of death from COVID-19 based on the observations and the results of the blood tests.
 
-It is assumed, that each row will be separate observation of unique patient.
-At the beginning you should extract right columns from dataset. The column containing id of the patients is not needed - just like the columns with dates of research and admission/discharge time (we do not know how long the patient will be hospitalizing).
-Also, we need to shuffle rows in dataframe. It is necessary, because first patient which died, is on `r which(as.vector(data_df$outcome) %in% "died") %>% first()` position in dataframe and we cannot start teaching models before both classes will occur in dataset.
+As assumption was made that each row will be separate observation of unique patient.
+First you should extract right columns from dataset. The column containing id of the patients is not needed - just like the columns with dates of research and admission/discharge time (we do not know how long the patient will be hospitalized).
+Also, we need to shuffle rows in dataframe. It is necessary, because first patient who died, is on `r which(as.vector(data_df$outcome) %in% "died") %>% first()` position in dataframe and we cannot start teaching models before both classes will occur in dataset.
 To ensure repeatability of the shuffling, the seed is seting.
 
 ```{r data_extracting_and_shuffling}
@@ -501,7 +501,7 @@ The following subchapters will checking some machine learning methods and the di
 
 ### k Nearest Neighbours
 
-The Nearest Neighbours classifier belongs to group of classifiers based on instance methods. The classification process is done online when a new case needs to be classified. Such methods are generally called lazy learning methods.
+The Nearest Neighbours classifier belongs to a group of classifiers based on instance methods. The classification process is done online when a new case needs to be classified. Such methods are generally called lazy learning methods.
 The idea behind k-NN algorithm is as follows. When there is a need to classify a new object *X*, the k_NN classifier searches in the pattern space for *k* objects of the training set closest to the object *X*. Object *X*, using majority voting, is assigned to the class that dominates in the set of its *k* nearest neighbours.
 
 At the beginning, the seed is seting. It ensure the repeatability of experiments.
@@ -547,9 +547,9 @@ knn_confMatrix <- caret::confusionMatrix(data = knnClasses, testing$outcome)
 knn_confMatrix
 ```
 
-We see the basic performance statistics. The model is not perfect, but its prediction is quite good. 
+You can see the basic performance statistics. The model is not perfect, but its prediction is quite good. 
 Confusion matrix analysis is one of the many ways to assess the accuracy of the model. Another one is ROC curve and area under ROC curve (AUC).
-ROC curve  is a performance measurement for classification problem at various thresholds settings. ROC is a probability curve and AUC represents degree or measure of separability. It tells how much model is capable of distinguishing between classes. Higher the AUC, better the model is at predicting survived as survived and died as died. By analogy, Higher the AUC, better the model is at distinguishing between patients with disease and no disease
+ROC curve  is a performance measurement for classification problem at various thresholds settings. ROC is a probability curve and AUC represents degree or measure of separability. It tells how capable of distinguishing between the classes the model is. The higher the AUC, the better the model is at predicting survived as survived and died as died. By analogy, the higher the AUC, the better the model is at distinguishing between patients with and without disease.
 
 ```{r knn_ROC, warning = FALSE, message = FALSE, fig.width = 10}
 knn_ROC <- roc(response = testing$outcome,
@@ -569,9 +569,10 @@ legend("bottomright",
 ```
 
 
-The AUC value is quite big. Now, its need to check if in our model occured so-called overfitting.
+The AUC value is quite big. Now, its need to check if an overfitting occured in our model.
+
 Overfitting is over-matching to the specificty of the training data is most often assciotaed with the loss of generalizability.
-To check if model is or not is overfitted, the special function was created to create learning curves (similar functions was created also to others tested methods).
+To check if model is or not is overfitted, the special function was created to create learning curves (similar functions was created also to others testing methods).
 
 ```{r knn_learning_curves_fun, warning = FALSE}
 my_learning_curve_knn <- function(training_data,
@@ -650,8 +651,8 @@ ggplotly(knn_learning_curves)
 
 
 ```
-On the graph we see the learning curves. On the *X* axis there is the number of examples that was included into training process. On the *Y* axis there is the value of root mean square error.
-The chart with learning curves shows us, that error on training set is similar to error on testing set. It is not too big, so we can assume that model is not overfitted.
+On the graph you can see the learning curves. On the *X* axis there are the numbers of examples that was included into training process. On the *Y* axis there is the value of root mean square error.
+The chart with learning curves shows us, that error on the training set is similar to the error on the testing set. It is not too big, so we can assume that model is not overfitted.
 
 ### SVM 
 *SVM* is classification method whose learning aim is to determine the separating hyperplane with a maximum margin of examples belonging to two classes.
@@ -681,7 +682,7 @@ svmClasses_prob <- predict(svm_fit,
 ```
 
 
-Below the confusion matrix for the model with *SVM* method.
+Below you can find the confusion matrix for the model with *SVM* method.
 
 ```{r svm_confMatrix}
 
@@ -761,7 +762,7 @@ my_learning_curve_svm <- function(training_data,
 }
 ```
 
-This function generates learning curves for testing and training set for model with *SVM* method.
+This function generates learning curves for a testing and a training set for model with *SVM* method.
 Below chart shows learning curves for training set and testing set.
 
 ```{r svm_learning_curves, warning=FALSE, fig.width = 10, warning = FALSE, message = FALSE}
@@ -787,13 +788,13 @@ ggplotly(svm_learning_curves)
 
 
 ```
-The error for training set is lower that error for testing set. We see, that value of both errors are lower that errors in *k-NN* method. So, that means, the *SVM* model is better than *k-NN*.
+The error for the training set is lower than error for the testing set. You can see, that value of both errors are lower that errors in *k-NN* method. That means, the *SVM* model is better than *k-NN*.
 
 ### Random Forests
 
 Random Forests belong to the category of methods of constructing complex classifiers using the idea of modifying the set of attributes of the training data set. The Random Forest method uses only decision trees as base classifiers.
 
-At the beginning, the seed is seting. It ensure the repeatability of experiments.
+In the beginning, the seed is seting. It ensure the repeatability of experiments.
 ```{r seting_seed, warning=FALSE, error=FALSE,}
 set.seed(17)
 ```
@@ -825,7 +826,7 @@ rf_confMatrix <- caret::confusionMatrix(data = rfClasses, testing$outcome)
 rf_confMatrix
 ```
 
-This model made the fewest mistakes of all the previous ones. 
+This model was the least mistaken comparing to the previous models. 
 Below the ROC curve for model with *Random Forests*
 
 ```{r rf_ROC, warning=FALSE, error=FALSE, message=FALSE, fig.width = 10}
@@ -843,13 +844,13 @@ legend("bottomright",
        legend = c("Empirical"),
        lwd = 5)
 ```
-AUC is, similar like in the previous models, big.
+AUC is, similar to the previous models, big.
 Below the function for creating learning curves.
 ```{r learning_curfe_rf_fun}
 my_learning_curve_rf <- function(training_data,
-                              test_data,
-                              outcome = NULL,
-                              trControl = NULL)
+                                test_data,
+                                outcome = NULL,
+                                trControl = NULL)
 {
   train_len <- nrow(training_data)
   if(train_len < 2)
@@ -863,9 +864,10 @@ my_learning_curve_rf <- function(training_data,
   learnCurve <- data.frame(m = integer(train_len),
                            RMSE_type = character(train_len),
                            RMSE_value = integer(train_len))
-  tGrid
   j <- 0
-  for (i in c(seq(5,train_len, 20), train_len))
+  
+  
+  for (i in c(seq(5, train_len, 20), train_len))
   {
     j <- j + 1
     tr <- training_data[1:i,]
@@ -875,7 +877,7 @@ my_learning_curve_rf <- function(training_data,
                     data = tr,
                     method = "rf",
                     trControl = trControl,
-                    ntree=10)
+                    ktree = 10)
     
   
     learnCurve$m[j] <- i
@@ -1035,7 +1037,7 @@ ggplotly(comp_testing_curves)
 
 ```
 
-As it was previously, the best score of error is in the model, which learning method was *Random Forests*.
+As you could see before, the best score of an error is in the model, which learning method was *Random Forests*.
 We can assume, that the best model of prediction is the model which learning method is *Random Forests*.
 In the following chapter, there will be attempt to improve the model by tuning.
 
@@ -1044,7 +1046,7 @@ In the following chapter, there will be attempt to improve the model by tuning.
 
 To improve our model, we can reduce the number of attributes used in training the model. Let check what attributes are the most important in our best model.
 The importance of an attribute can be judged on the basis of the mean decrease gini index.
-Below the table with the attributes sorted by importance for the best model.
+Below, you will find a table with the attributes sorted by importance for the best model.
 
 ```{r extract_most_important_attributes_rf}
 attributes <- colnames(select(ml_df, -"outcome"))
@@ -1073,7 +1075,7 @@ new_training <- training %>%
 new_testing <- testing %>%
             select(c("outcome", all_of(most_important_attr_rf)))
 ```
-Below same process of training model like above.
+In the following, you will find the same process of training model like above.
 
 First, the seed must be set.
 ```{r improving_model_seed, warning=FALSE, message=FALSE}
@@ -1106,7 +1108,7 @@ new_rf_confMatrix <- caret::confusionMatrix(data = new_rfClasses, new_testing$ou
 new_rf_confMatrix
 ```
 
-For now, we see, the tuned model made more mistakes that original model, but did not make mistakes the so-called *False Positive*, which should be important to us in terms of prediction - the person who survives is qualified as the on who will die. This type of error is more desirable if we can choose between it and a *False Negative* error, which will qualify the person who dies as a survivor.
+For now, you can see taht, the tuned model made more mistakes that original model, but did not make mistakes the so-called *False Positive*, which should be important to us in terms of prediction - the person who survives is qualified as the on who will die. This type of error is more desirable if we can choose between it and a *False Negative* error, which will qualify the person who dies as a survivor.
 
 Below the ROC curve for tuned model.
 
@@ -1125,7 +1127,7 @@ legend("bottomright",
        legend = c("Empirical"),
        lwd = 5)
 ```
-The area under curve (*AUC*) is bigger than in the original model. That means, the tuned model is more efficient than original.
+The area under curve (*AUC*) is bigger than in the original model. That means, the tuned model is more efficient than the original.
 
 Let check the learning curve for tuned model. The original function created for *Random Forests* will be used.
 
@@ -1153,7 +1155,7 @@ ggplotly(tuned_model_learning_curves_1)
 
 
 ```
-The chart above, with the learning curves does not differ much from the original. The testing error is on the same level, only the training error incresed, but acceptable.
+The chart above, with the learning curves does not differ much from the original. The testing error is on the same level, only the training error has increased, but acceptable.
 Let's check if it is possible to tune model more that now. The whole process must be repeated.
 
 First, the extraction of most important attributes.
@@ -1236,7 +1238,7 @@ legend("bottomright",
        lwd = 5)
 
 ```
-The graph above tells us, that this model is not as good as like the previous one. But, we limited number of attributes from `r nrow(most_important_attr_rf)` to `r length(most_important_attr_rf2)` attributes. It means, that we do not need to  know the values of `r nrow(most_important_attr_rf)` attributes, we need only `r length(most_important_attr_rf2)` attributes to predict the result with the same accuracy.
+The graph above tells us, that this model is not as good as the previous one. But, we have limited number of attributes from `r length(most_important_attr_rf)` to `r length(most_important_attr_rf2)` attributes. It means, that we do not need to  know the values of `r length(most_important_attr_rf)` the attributes, we need only `r length(most_important_attr_rf2)` attributes to predict the result with the same accuracy.
 Below the chart with learning curves of new tuned model.
 
 ```{r tuned2_learning_curves, fig.width = 10, warninge = FALSE, message = FALSE}
@@ -1331,6 +1333,6 @@ tree <- tree_func(final_model = new_rf_fit2$finalModel,
                   tree_num = 5)
 ```
 
-The conclusions are as follows. The model of prediction could be use to assess the state of health the patients. The model sufficiently reflects reality, but it only considers blood results. Patient symptoms and other data such as age, gender, comorbidities are not into account. First of all, the model should play a supporting role in diagnosing the course of the disease - it should not, prejudge the treatment of the patient. It should be remembered that each case is different and an individual course of treatment should be selected for each case.
+The conclusions are following. The model of prediction could be use to assess the state of health the patients. The model sufficiently reflects reality, but it only considers blood tests' results. The Patient's symptoms and the other data such as age, gender, comorbidities are not taken into account. First of all, the model should play a supporting role in diagnosing the course of the disease - it should not, prejudge the treatment of the patient. It should be remembered that each case is different and an individual course of treatment should be selected for each case.
 
 # Bibliography
